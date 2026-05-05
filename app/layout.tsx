@@ -1,28 +1,28 @@
 import type { Metadata, Viewport } from "next"
-import { Space_Grotesk, Instrument_Serif, JetBrains_Mono } from "next/font/google"
+import { Manrope, Lora, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { SiteNav } from "@/components/site-nav"
 import { SiteFooter } from "@/components/site-footer"
 import "./globals.css"
 
-const spaceGrotesk = Space_Grotesk({
+const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-space-grotesk",
+  variable: "--font-sans-display",
   display: "swap",
 })
 
-const instrumentSerif = Instrument_Serif({
+const lora = Lora({
   subsets: ["latin", "cyrillic"],
-  weight: "400",
+  weight: ["400", "500"],
   style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
+  variable: "--font-serif-editorial",
   display: "swap",
 })
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-jetbrains-mono",
+  variable: "--font-mono",
   display: "swap",
 })
 
@@ -63,7 +63,7 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      className={`dark bg-background ${spaceGrotesk.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      className={`dark bg-background ${manrope.variable} ${lora.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/30">
         <SiteNav />
