@@ -1,5 +1,5 @@
-import Image from "next/image"
 import Link from "next/link"
+import { HeroChat } from "./hero-chat"
 
 export function LandingHero() {
   return (
@@ -23,7 +23,10 @@ export function LandingHero() {
               SIGNAL · 01
             </p>
 
-            <h1 className="font-display font-medium tracking-[-0.025em] leading-[0.95] text-[48px] sm:text-[64px] lg:text-[72px] xl:text-[88px] text-balance break-words">
+            <h1
+              className="font-display font-medium tracking-[-0.025em] leading-[1.02] text-[40px] sm:text-[52px] lg:text-[58px] xl:text-[72px] text-pretty hyphens-none [word-break:keep-all]"
+              lang="ru"
+            >
               Разговор,
               <br />
               превращённый
@@ -76,33 +79,9 @@ export function LandingHero() {
             </div>
           </div>
 
-          {/* RIGHT — neural visualization with caption */}
+          {/* RIGHT — live conversation preview */}
           <figure className="relative z-[1] min-w-0 self-end">
-            <div className="relative aspect-[4/5] overflow-hidden bg-background-alt border border-border">
-              <Image
-                src="/neural-hero.jpg"
-                alt="Абстрактная визуализация нейронной сети: тонкие циановые линии связей между узлами на тёмно-синем фоне"
-                fill
-                priority
-                sizes="(min-width: 1024px) 40vw, 100vw"
-                className="object-cover"
-              />
-              {/* corner ticks */}
-              <span aria-hidden className="absolute top-2 left-2 size-3 border-t border-l border-primary/70" />
-              <span aria-hidden className="absolute top-2 right-2 size-3 border-t border-r border-primary/70" />
-              <span aria-hidden className="absolute bottom-2 left-2 size-3 border-b border-l border-primary/70" />
-              <span aria-hidden className="absolute bottom-2 right-2 size-3 border-b border-r border-primary/70" />
-              <div
-                aria-hidden
-                className="absolute inset-x-0 bottom-0 px-3 py-2 flex items-center justify-between text-[10px] font-mono tracking-[0.18em] uppercase text-foreground/85 bg-gradient-to-t from-background/80 to-transparent"
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  <span aria-hidden className="size-1.5 rounded-full bg-primary nb-blink" />
-                  TRACE 142
-                </span>
-                <span>04:21</span>
-              </div>
-            </div>
+            <HeroChat />
             <figcaption className="mt-4 flex items-baseline gap-3 text-[12px] text-muted-foreground">
               <span className="font-mono tracking-widest uppercase">/ visual 01</span>
               <span className="leading-snug">
