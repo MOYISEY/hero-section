@@ -63,6 +63,17 @@ export function ChatInterface() {
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
   }, [messages, isStreaming])
 
+  useEffect(() => {
+    const savedMessages = messages
+      .map((message) => ({
+        role: message.role,
+        text: getText(message),
+      }))
+      .filter((message) => message.text)
+    localStorage.setItem("neuralbrief.chat", JSON.stringify(savedMessages))
+    localStorage.setItem("neuralbrief.updatedAt", new Date().toISOString())
+  }, [messages])
+
   function handleSend(e?: FormEvent) {
     e?.preventDefault()
     const value = input.trim()
@@ -196,6 +207,16 @@ export function ChatInterface() {
               </p>
               <Link
                 href="/brief"
+                onClick={() => {
+                  const savedMessages = messages
+                    .map((message) => ({
+                      role: message.role,
+                      text: getText(message),
+                    }))
+                    .filter((message) => message.text)
+                  localStorage.setItem("neuralbrief.chat", JSON.stringify(savedMessages))
+                  localStorage.setItem("neuralbrief.updatedAt", new Date().toISOString())
+                }}
                 className="inline-flex items-center gap-3 bg-primary text-primary-foreground px-5 py-3 text-[14px] font-medium tracking-tight transition-colors hover:bg-primary-soft"
               >
                 <span>Собрать ТЗ</span>

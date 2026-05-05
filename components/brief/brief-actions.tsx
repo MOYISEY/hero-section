@@ -5,24 +5,23 @@ import { toast } from "sonner"
 import { Download, Send, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function BriefActions() {
+export function BriefActions({ briefText }: { briefText: string }) {
   const [sent, setSent] = useState(false)
 
   function downloadPdf() {
-    toast("Файл готовится", {
-      description: "Через секунду начнётся загрузка brief.pdf",
+    toast("Открываю печать", {
+      description: "В окне печати выберите «Сохранить как PDF».",
     })
-    setTimeout(() => {
-      toast.success("Бриф скачан", {
-        description: "brief-neuralbrief-4248.pdf · 312 КБ",
-      })
-    }, 900)
+    window.print()
   }
 
   function sendToDevs() {
+    const subject = encodeURIComponent("Техническое задание NeuralBrief")
+    const body = encodeURIComponent(briefText)
+    window.location.href = `mailto:?subject=${subject}&body=${body}`
     setSent(true)
-    toast.success("Бриф отправлен", {
-      description: "dev@studio.ru, lead@studio.ru уведомлены",
+    toast.success("Открываю почтовый клиент", {
+      description: "Выберите получателей и отправьте письмо.",
     })
   }
 
