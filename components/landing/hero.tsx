@@ -14,16 +14,16 @@ export function LandingHero() {
         <span>NODE 01 / 04</span>
       </div>
 
-      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-20 pb-16 lg:pb-24">
-        <div className="grid lg:grid-cols-12 gap-x-8 gap-y-12">
+      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-20 pb-16 lg:pb-24 overflow-hidden">
+        <div className="grid lg:grid-cols-2 gap-x-10 gap-y-12 items-start">
           {/* LEFT — primary signal */}
-          <div className="lg:col-span-7">
+          <div className="relative z-[2] min-w-0">
             <p className="nb-eyebrow mb-8 inline-flex items-center gap-2">
               <span aria-hidden className="size-1 rounded-full bg-primary" />
               SIGNAL · 01
             </p>
 
-            <h1 className="font-display font-medium tracking-[-0.025em] leading-[0.95] text-[52px] sm:text-[72px] lg:text-[104px] text-balance">
+            <h1 className="font-display font-medium tracking-[-0.025em] leading-[0.95] text-[48px] sm:text-[64px] lg:text-[72px] xl:text-[88px] text-balance break-words">
               Разговор,
               <br />
               превращённый
@@ -77,7 +77,7 @@ export function LandingHero() {
           </div>
 
           {/* RIGHT — neural visualization with caption */}
-          <figure className="lg:col-span-5 self-end">
+          <figure className="relative z-[1] min-w-0 self-end">
             <div className="relative aspect-[4/5] overflow-hidden bg-background-alt border border-border">
               <Image
                 src="/neural-hero.jpg"
