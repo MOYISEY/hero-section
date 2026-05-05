@@ -1,12 +1,12 @@
 const STUDIOS = [
-  "Студия Север",
-  "Lumen Lab",
-  "Praktika.web",
-  "Кириллица",
-  "BasaltUI",
-  "Зеркало",
-  "Полутон",
-  "Атриум",
+  "Astana IT University",
+  "Astana IT University",
+  "Astana IT University",
+  "Astana IT University",
+  "Astana IT University",
+  "Astana IT University",
+  "Astana IT University",
+  "Astana IT University",
 ] as const
 
 export function TrustedBar() {

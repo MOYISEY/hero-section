@@ -47,15 +47,15 @@ export function LandingFeatures() {
               <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border pt-6">
                 <div>
                   <dt className="nb-folio uppercase tracking-widest">средняя длина</dt>
-                  <dd className="mt-1.5 font-display text-2xl">8 — 12 вопросов</dd>
+                  <dd className="mt-1.5 font-display text-2xl">0 вопросов</dd>
                 </div>
                 <div>
                   <dt className="nb-folio uppercase tracking-widest">время</dt>
-                  <dd className="mt-1.5 font-display text-2xl">≈ 4 минуты</dd>
+                  <dd className="mt-1.5 font-display text-2xl">0 минут</dd>
                 </div>
                 <div>
                   <dt className="nb-folio uppercase tracking-widest">сценариев</dt>
-                  <dd className="mt-1.5 font-display text-2xl">37</dd>
+                  <dd className="mt-1.5 font-display text-2xl">0</dd>
                 </div>
                 <div>
                   <dt className="nb-folio uppercase tracking-widest">пропускает</dt>
@@ -176,13 +176,13 @@ const ENTRIES = [
   {
     title: "Цели и задачи",
     text:
-      "Уточняет, чего проект должен добиться через три месяца. Без расплывчатых формулировок «привлечь больше клиентов».",
+      "Уточняет, чего проект должен добиться. Без расплывчатых формулировок «привлечь больше клиентов».",
     page: "node.06",
   },
   {
     title: "Аудитория и устройства",
     text:
-      "Кому он нужен и откуда они приходят. Доли мобильного и десктопа, языки, география.",
+      "Кому он нужен и откуда они приходят. Доли мобильного и десктопа, языки.",
     page: "node.09",
   },
   {

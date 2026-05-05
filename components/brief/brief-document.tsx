@@ -38,7 +38,7 @@ export function BriefDocument() {
             <p className="nb-eyebrow mb-3">Техническое задание · черновик</p>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight font-medium text-balance leading-[1.02]">
               Лендинг для digital-агентства
-              <span className="text-primary"> «Praktika.web»</span>
+              <span className="text-primary"> «Astana IT University»</span>
             </h1>
             <dl className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3 max-w-2xl">
               {[
@@ -87,7 +87,7 @@ export function BriefDocument() {
             <Section id="tip" icon={Compass} n="01" title="Тип сайта">
               <p>
                 Одностраничный лендинг с фокусом на сбор заявок. Адаптивный,
-                с приоритетом мобильной версии (70% трафика). Оптимизирован
+                с приоритетом мобильной версии. Оптимизирован
                 под Lighthouse Performance ≥ 90.
               </p>
               <KeyValueGrid
@@ -103,9 +103,9 @@ export function BriefDocument() {
               <p>Запуск решает три бизнес-задачи:</p>
               <BulletList
                 items={[
-                  "Минимум 40 целевых заявок в неделю на услуги веб-разработки.",
-                  "Снижение стоимости лида на 25% относительно текущей контекстной рекламы.",
-                  "Демонстрация уровня экспертизы через 6–8 кейсов с измеримыми результатами.",
+                  "0 подтверждённых целевых заявок на текущем этапе.",
+                  "0 подтверждённых данных по стоимости лида на текущем этапе.",
+                  "0 подтверждённых кейсов с измеримыми результатами на текущем этапе.",
                 ]}
               />
             </Section>
@@ -118,8 +118,8 @@ export function BriefDocument() {
               </p>
               <div className="mt-6 grid sm:grid-cols-3 gap-px bg-border/60 rounded-xl overflow-hidden border border-border/60">
                 {[
-                  { v: "70%", l: "мобильный трафик" },
-                  { v: "28–45", l: "возраст ядра" },
+                  { v: "0%", l: "мобильный трафик" },
+                  { v: "0", l: "возраст ядра" },
                   { v: "B2B", l: "тип принятия решений" },
                 ].map((s) => (
                   <div key={s.l} className="bg-background p-5">
@@ -139,10 +139,10 @@ export function BriefDocument() {
               <BulletList
                 items={[
                   "Hero-блок с УТП и единственной целевой кнопкой «Оставить заявку».",
-                  "Секция кейсов: 6–8 проектов с метриками результата (CTR, конверсия, рост выручки).",
+                  "Секция кейсов: 0 проектов с подтверждёнными метриками результата.",
                   "Калькулятор стоимости с тремя пресетами и итоговой вилкой.",
                   "Форма заявки с интеграцией amoCRM (UTM, IP, источник).",
-                  "Блок социальных доказательств: 4 видео-отзыва клиентов.",
+                  "Блок социальных доказательств: 0 видео-отзывов клиентов.",
                   "Онлайн-чат с менеджером (JivoSite или аналог).",
                 ]}
               />
@@ -231,8 +231,8 @@ export function BriefDocument() {
               </div>
               <div className="font-mono text-xs text-muted-foreground space-y-1.5">
                 <p>Хэш документа: a4f9·c81b·2e07·5d10</p>
-                <p>Сгенерировано: 05.05.2026, 14:32 МСК</p>
-                <p>Время сборки: 4 мин 18 сек</p>
+                <p>Сгенерировано: 05.05.2026, 14:32</p>
+                <p>Время сборки: 0 мин 0 сек</p>
               </div>
             </div>
           </article>

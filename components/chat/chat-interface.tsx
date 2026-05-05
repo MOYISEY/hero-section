@@ -40,13 +40,13 @@ const DEMO: Message[] = [
     id: 3,
     from: "ai",
     text:
-      "Хорошо, лендинг. Какой главной цели страница должна достигать через месяц после запуска? Например: пятьдесят заявок в неделю, рост узнаваемости, продажа конкретной услуги.",
+      "Хорошо, лендинг. Какой главной цели страница должна достигать после запуска? Например: первые заявки, рост узнаваемости, продажа конкретной услуги.",
     meta: "Шаг 02",
   },
   {
     id: 4,
     from: "user",
-    text: "Минимум сорок заявок в неделю на услуги веб-разработки.",
+    text: "Пока нет подтверждённых целей по заявкам.",
   },
   {
     id: 5,
@@ -59,7 +59,7 @@ const DEMO: Message[] = [
     id: 6,
     from: "user",
     text:
-      "Владельцы малого и среднего бизнеса, 28 — 45 лет. Около 70% будут с мобильных, остальные с десктопа.",
+      "Владельцы малого и среднего бизнеса. Точных данных по устройствам пока нет.",
   },
   {
     id: 7,
@@ -166,7 +166,7 @@ export function ChatInterface() {
             <span aria-hidden className="nb-status-dot" />
             / trace · live session
           </span>
-          <span>SESSION 4 248</span>
+          <span>SESSION 0</span>
           <span>NODE.12</span>
         </div>
       </div>
@@ -300,7 +300,7 @@ export function ChatInterface() {
             <div className="flex items-baseline justify-between pb-4 border-b border-border">
               <p className="font-display text-xl tracking-tight inline-flex items-center gap-3">
                 <span aria-hidden className="size-1.5 rounded-full bg-primary nb-blink" />
-                trace · <span className="text-primary">Praktika.web</span>
+                trace · <span className="text-primary">Astana IT University</span>
               </p>
               <span className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
                 запись 05.05.2026

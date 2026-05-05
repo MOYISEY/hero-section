@@ -15,7 +15,7 @@ export function LandingFinalCTA() {
               <h2 className="font-display font-medium tracking-[-0.025em] text-[44px] sm:text-[64px] lg:text-[80px] leading-[0.98] text-balance">
                 Запустите диалог.
                 <br />
-                <span className="text-primary">Получите ТЗ к концу обеда</span>.
+                <span className="text-primary">ТЗ готово раньше, чем остынет кофе</span>.
               </h2>
               <p className="mt-8 max-w-xl text-[16px] text-subtle-foreground leading-relaxed">
                 Бесплатный демо-режим. Без регистрации. Без подвохов
@@ -41,7 +41,7 @@ export function LandingFinalCTA() {
                 </svg>
               </Link>
               <p className="font-mono text-[11px] tracking-[0.16em] uppercase text-muted-foreground">
-                online since 2026 · 4 248 briefs delivered
+                online since 2026 · 0 briefs delivered
               </p>
             </div>
           </div>
