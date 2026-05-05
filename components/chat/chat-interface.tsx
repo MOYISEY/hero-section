@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { Mic, Send, Sparkles } from "lucide-react"
 
 type Step = {
   id: string
@@ -13,7 +12,7 @@ type Step = {
 }
 
 const STEPS: Step[] = [
-  { id: "01", label: "Тип проекта", hint: "Что строим" },
+  { id: "01", label: "Тип проекта", hint: "Что мы строим" },
   { id: "02", label: "Цели", hint: "Зачем строим" },
   { id: "03", label: "Аудитория", hint: "Для кого" },
   { id: "04", label: "Функциональность", hint: "Что должен уметь сайт" },
@@ -41,13 +40,13 @@ const DEMO: Message[] = [
     id: 3,
     from: "ai",
     text:
-      "Хорошо, лендинг. Какой главной цели страница должна достигать через месяц после запуска? Например: 50 заявок в неделю, рост узнаваемости, продажа конкретной услуги.",
+      "Хорошо, лендинг. Какой главной цели страница должна достигать через месяц после запуска? Например: пятьдесят заявок в неделю, рост узнаваемости, продажа конкретной услуги.",
     meta: "Шаг 02",
   },
   {
     id: 4,
     from: "user",
-    text: "Минимум 40 заявок в неделю на услуги веб-разработки.",
+    text: "Минимум сорок заявок в неделю на услуги веб-разработки.",
   },
   {
     id: 5,
@@ -60,13 +59,13 @@ const DEMO: Message[] = [
     id: 6,
     from: "user",
     text:
-      "Владельцы малого и среднего бизнеса, 28–45 лет. Около 70% будут с мобильных, остальные — с десктопа.",
+      "Владельцы малого и среднего бизнеса, 28 — 45 лет. Около 70% будут с мобильных, остальные с десктопа.",
   },
   {
     id: 7,
     from: "ai",
     text:
-      "Отлично. Перехожу к функциональности. Я предлагаю обязательные блоки: hero с УТП, кейсы, форма заявки с интеграцией CRM, калькулятор стоимости. Что-то добавим, уберём или поменяем?",
+      "Перехожу к функциональности. Предлагаю обязательные блоки: hero с УТП, кейсы, форма заявки с интеграцией CRM, калькулятор стоимости. Что-то добавим, уберём или поменяем?",
     meta: "Шаг 04",
   },
   {
@@ -79,7 +78,7 @@ const DEMO: Message[] = [
     id: 9,
     from: "ai",
     text:
-      "Записал. Последний короткий блок про дизайн: какой характер сайта вам ближе — строгий и минималистичный, тёплый и человечный, или технологичный и футуристичный?",
+      "Записал. Последний короткий блок про дизайн: какой характер сайта вам ближе — строгий и минималистичный, тёплый и человечный или технологичный?",
     meta: "Шаг 05",
   },
 ]
@@ -92,7 +91,6 @@ export function ChatInterface() {
   const [done, setDone] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Demo replay: stagger messages on mount
   useEffect(() => {
     let cancelled = false
     const queue = DEMO.slice(1)
@@ -111,7 +109,6 @@ export function ChatInterface() {
         if (cancelled) return
         setMessages((prev) => [...prev, m])
         if (m.meta) {
-          // advance progress
           const idx = STEPS.findIndex((s) => m.meta?.includes(s.id))
           if (idx >= 0) setStepIndex(idx)
         }
@@ -127,7 +124,6 @@ export function ChatInterface() {
     }
   }, [])
 
-  // autoscroll
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -142,7 +138,6 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, newMsg])
     setInput("")
 
-    // Simulated AI reply
     setTyping(true)
     setTimeout(() => {
       setTyping(false)
@@ -164,187 +159,196 @@ export function ChatInterface() {
 
   return (
     <div className="relative">
-      <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      {/* Page masthead */}
+      <div className="border-b border-border">
+        <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-4 flex items-center justify-between text-[11px] font-mono tracking-[0.16em] uppercase text-muted-foreground">
+          <span>Глава II · Стенограмма</span>
+          <span>Сессия № 4 248</span>
+          <span>стр. 12</span>
+        </div>
+      </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-10 pb-24">
-        {/* Page heading */}
-        <div className="mb-8 flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <p className="nb-eyebrow mb-3">Демо-диалог</p>
-            <h1 className="font-display text-4xl sm:text-5xl tracking-tight font-medium">
-              Диалог с
-              <span className="font-serif italic text-primary-soft"> NeuralBrief</span>
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 pb-20">
+        {/* Header */}
+        <header className="grid lg:grid-cols-12 gap-x-10 gap-y-6 mb-12 pb-12 border-b border-border">
+          <div className="lg:col-span-7">
+            <p className="nb-eyebrow mb-4">Демо-диалог</p>
+            <h1 className="font-display font-medium tracking-[-0.015em] text-[44px] sm:text-[64px] leading-[1.0] text-balance">
+              Беседа с редактором,
+              <br />
+              <span className="italic">которому не нужен черновик</span>.
             </h1>
           </div>
-          <p className="max-w-md text-subtle-foreground leading-relaxed">
-            Ниже — заранее проигранный пример того, как AI собирает бриф.
-            Вы можете подключиться и продолжить разговор.
+          <p className="lg:col-span-5 self-end max-w-md text-[15px] text-subtle-foreground leading-relaxed">
+            Ниже проигрывается заранее записанный фрагмент. Когда демо
+            закончится, можно подключиться и продолжить разговор своими
+            словами.
           </p>
-        </div>
+        </header>
 
-        <div className="grid lg:grid-cols-[280px_1fr] gap-5">
-          {/* Sidebar — progress tracker */}
+        <div className="grid lg:grid-cols-[280px_1fr] gap-10">
+          {/* Sidebar — печатное оглавление */}
           <aside className="lg:sticky lg:top-24 self-start">
-            <div className="rounded-2xl border border-border/70 bg-surface/40 overflow-hidden">
-              <div className="p-5 border-b border-border/60">
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                    Прогресс
-                  </span>
-                  <span className="font-mono text-[11px] text-primary-soft">
-                    {progress}%
-                  </span>
-                </div>
-                <div className="h-[3px] rounded-full bg-border/80 overflow-hidden">
-                  <div
-                    className="h-full nb-progress-fill rounded-full transition-[width] duration-700"
-                    style={{
-                      width: `${progress}%`,
-                      transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
-                    }}
-                  />
-                </div>
-                <p className="mt-3 font-display text-lg leading-tight">
-                  Шаг {STEPS[stepIndex].id} · {STEPS[stepIndex].label}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {STEPS[stepIndex].hint}
-                </p>
+            <div className="border-y border-border py-6">
+              <div className="flex items-baseline justify-between mb-4">
+                <span className="nb-eyebrow">Прогресс</span>
+                <span className="font-mono text-[11px] text-foreground">
+                  {progress}%
+                </span>
               </div>
-
-              <ol className="p-3 flex flex-col gap-1">
-                {STEPS.map((s, i) => {
-                  const state =
-                    i < stepIndex ? "done" : i === stepIndex ? "active" : "todo"
-                  return (
-                    <li
-                      key={s.id}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
-                        state === "active" && "bg-background border border-border/70",
-                        state === "todo" && "text-muted-foreground",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "grid place-items-center size-6 rounded-md font-mono text-[10px] shrink-0",
-                          state === "done" && "bg-success/15 text-success border border-success/30",
-                          state === "active" && "bg-primary text-primary-foreground",
-                          state === "todo" && "bg-surface border border-border/60",
-                        )}
-                      >
-                        {state === "done" ? <CheckIcon /> : s.id}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate">{s.label}</div>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ol>
+              <div className="h-px bg-border mb-4 relative">
+                <div
+                  className="absolute inset-y-[-1px] left-0 bg-foreground"
+                  style={{
+                    width: `${progress}%`,
+                    transition: "width 700ms cubic-bezier(0.22, 1, 0.36, 1)",
+                  }}
+                />
+              </div>
+              <p className="font-display text-xl leading-tight">
+                Шаг {STEPS[stepIndex].id} ·{" "}
+                <span className="italic">{STEPS[stepIndex].label}</span>
+              </p>
+              <p className="mt-1.5 text-[13px] text-muted-foreground">
+                {STEPS[stepIndex].hint}
+              </p>
             </div>
 
-            {/* Generate brief CTA — appears after demo concludes */}
+            <ol className="mt-6 flex flex-col">
+              {STEPS.map((s, i) => {
+                const state =
+                  i < stepIndex ? "done" : i === stepIndex ? "active" : "todo"
+                return (
+                  <li
+                    key={s.id}
+                    className={cn(
+                      "grid grid-cols-[28px_1fr_auto] items-baseline gap-3 py-3 border-b border-border last:border-b-0 transition-colors",
+                      state === "todo" && "text-muted-foreground",
+                      state === "active" && "text-foreground",
+                      state === "done" && "text-subtle-foreground",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "font-mono text-[11px] tracking-[0.1em]",
+                        state === "active" && "text-primary",
+                      )}
+                    >
+                      {s.id}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[14px]",
+                        state === "active" &&
+                          "font-display italic text-[16px] leading-tight",
+                      )}
+                    >
+                      {s.label}
+                    </span>
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "text-[10px] font-mono",
+                        state === "done" && "text-foreground",
+                        state === "active" && "text-primary",
+                        state === "todo" && "text-muted-foreground/50",
+                      )}
+                    >
+                      {state === "done" ? "✓" : state === "active" ? "•" : "—"}
+                    </span>
+                  </li>
+                )
+              })}
+            </ol>
+
+            {/* Generate brief */}
             <div
               className={cn(
-                "mt-4 rounded-2xl border border-border/70 bg-gradient-to-br from-primary/15 to-surface/40 p-5 transition-all duration-700",
-                done ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none",
+                "mt-8 transition-all duration-700",
+                done
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2 pointer-events-none",
               )}
-              style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
             >
-              <div className="flex items-center gap-2 nb-eyebrow text-primary-soft">
-                <Sparkles className="size-3.5" /> Готово
-              </div>
-              <p className="mt-2 text-sm text-subtle-foreground leading-relaxed">
-                Достаточно данных, чтобы сформировать черновик ТЗ.
+              <p className="nb-eyebrow mb-3">Готово к вёрстке</p>
+              <p className="text-[14px] text-subtle-foreground leading-relaxed mb-4">
+                Достаточно данных, чтобы сверстать черновик ТЗ.
               </p>
               <Link
                 href="/brief"
-                className="mt-4 group inline-flex items-center justify-between gap-3 w-full rounded-full bg-foreground text-background pl-5 pr-2 py-2.5 text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors duration-500"
-                style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+                className="inline-flex items-baseline gap-2 font-display italic text-2xl"
               >
-                Сгенерировать ТЗ
-                <span className="grid place-items-center size-7 rounded-full bg-background/15 group-hover:translate-x-0.5 transition-transform duration-500">
-                  <ArrowSm />
+                <span className="font-mono text-[10px] tracking-[0.18em] uppercase not-italic text-muted-foreground">
+                  →
                 </span>
+                <span className="nb-link">Собрать ТЗ</span>
               </Link>
             </div>
           </aside>
 
-          {/* Chat area */}
-          <section className="rounded-2xl border border-border/70 bg-background-alt/60 overflow-hidden flex flex-col min-h-[640px] lg:min-h-[720px]">
-            {/* Header */}
-            <header className="flex items-center justify-between gap-4 px-5 py-4 border-b border-border/60 bg-background/40">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="grid place-items-center size-9 rounded-lg bg-gradient-to-br from-primary to-primary-soft text-primary-foreground font-mono text-[11px] shrink-0">
-                  AI
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">NeuralBrief Ассистент</p>
-                  <p className="font-mono text-[11px] text-muted-foreground flex items-center gap-1.5">
-                    <span className="size-1.5 rounded-full bg-success" />
-                    в эфире · отвечает за пару секунд
-                  </p>
-                </div>
-              </div>
-              <span className="hidden sm:inline-flex font-mono text-[10px] uppercase tracking-widest text-muted-foreground border border-border/60 rounded-full px-2.5 py-1">
-                сессия #4248
+          {/* Transcript */}
+          <section className="border-l border-border lg:pl-10 -ml-6 pl-6 lg:ml-0">
+            <div className="flex items-baseline justify-between pb-4 border-b border-border">
+              <p className="font-display text-xl tracking-tight">
+                Стенограмма ·{" "}
+                <span className="italic">Praktika.web</span>
+              </p>
+              <span className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
+                запись 05.05.2026
               </span>
-            </header>
-
-            {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
-              <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-                <DateDivider />
-                {messages.map((m) => (
-                  <MessageBubble key={m.id} message={m} />
-                ))}
-                {typing && <Typing />}
-              </div>
             </div>
 
-            {/* Input */}
+            <div
+              ref={scrollRef}
+              className="py-6 max-h-[640px] overflow-y-auto pr-2"
+            >
+              <ol className="flex flex-col gap-7">
+                {messages.map((m) => (
+                  <Line key={m.id} message={m} />
+                ))}
+                {typing && <TypingLine />}
+              </ol>
+            </div>
+
             <form
               onSubmit={handleSend}
-              className="border-t border-border/60 bg-background/40 px-4 sm:px-5 py-4"
+              className="mt-2 pt-6 border-t border-border"
             >
-              <div className="max-w-2xl mx-auto">
-                <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-surface/60 focus-within:border-primary/60 focus-within:bg-surface/80 transition-colors duration-300 pl-4 pr-2 py-2">
+              <label className="block">
+                <span className="nb-eyebrow">Ваш ответ</span>
+                <div className="mt-3 flex items-end gap-3 border-b border-foreground py-2">
                   <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Напишите ответ или уточнение…"
-                    className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground py-2"
+                    placeholder="Напишите свободно, как сказали бы в разговоре…"
+                    className="flex-1 bg-transparent outline-none text-[16px] text-foreground placeholder:text-muted-foreground py-1 font-display"
                     aria-label="Ваше сообщение"
                   />
                   <button
                     type="button"
                     onClick={() =>
                       toast("Голосовой ввод", {
-                        description: "В демо доступен только текстовый режим.",
+                        description:
+                          "В демо доступен только текстовый режим.",
                       })
                     }
-                    className="grid place-items-center size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
-                    aria-label="Голосовой ввод"
+                    className="text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest"
                   >
-                    <Mic className="size-4" />
+                    Голос
                   </button>
                   <button
                     type="submit"
                     disabled={!input.trim()}
-                    className="grid place-items-center size-9 rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all duration-300"
-                    aria-label="Отправить сообщение"
+                    className="font-mono text-[12px] uppercase tracking-widest text-foreground disabled:opacity-30 nb-link disabled:no-underline"
                   >
-                    <Send className="size-4" />
+                    Отправить →
                   </button>
                 </div>
-                <p className="mt-2 px-1 font-mono text-[11px] text-muted-foreground flex items-center gap-3">
-                  <span>Enter — отправить</span>
-                  <span className="opacity-40">·</span>
-                  <span>Shift + Enter — новая строка</span>
-                </p>
-              </div>
+              </label>
+              <p className="mt-3 font-mono text-[11px] text-muted-foreground tracking-wide">
+                Enter — отправить · Shift + Enter — новая строка
+              </p>
             </form>
           </section>
         </div>
@@ -353,98 +357,57 @@ export function ChatInterface() {
   )
 }
 
-function MessageBubble({ message }: { message: Message }) {
-  if (message.from === "user") {
-    return (
-      <div className="self-end max-w-[82%] nb-fade-up">
-        <div className="rounded-2xl rounded-br-md bg-primary text-primary-foreground px-4 py-3 text-[15px] leading-relaxed shadow-[0_8px_24px_-12px_oklch(0.55_0.20_280_/_0.6)]">
-          {message.text}
-        </div>
-        <p className="mt-1.5 px-1 text-right font-mono text-[10px] text-muted-foreground">
-          вы · сейчас
-        </p>
-      </div>
-    )
-  }
+function Line({ message }: { message: Message }) {
+  const isAi = message.from === "ai"
   return (
-    <div className="self-start max-w-[88%] nb-fade-up">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 grid place-items-center size-8 rounded-md bg-surface border border-border/70 font-mono text-[10px] text-primary-soft shrink-0">
-          AI
-        </div>
-        <div className="min-w-0">
-          <div className="rounded-2xl rounded-tl-md border border-border/70 bg-surface/70 px-4 py-3 text-[15px] text-foreground leading-relaxed">
-            {message.text}
-          </div>
-          <p className="mt-1.5 px-1 font-mono text-[10px] text-muted-foreground">
-            NeuralBrief{message.meta ? ` · ${message.meta}` : ""}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Typing() {
-  return (
-    <div className="self-start nb-fade-in">
-      <div className="flex items-center gap-3">
-        <div className="grid place-items-center size-8 rounded-md bg-surface border border-border/70 font-mono text-[10px] text-primary-soft shrink-0">
-          AI
-        </div>
-        <div className="rounded-full border border-border/70 bg-surface/70 px-3 py-2.5 flex items-center gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="block size-1.5 rounded-full bg-primary-soft"
-              style={{
-                animation: `nb-pulse-dot 1.2s ${i * 0.18}s infinite cubic-bezier(0.45, 0, 0.55, 1)`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function DateDivider() {
-  return (
-    <div className="flex items-center gap-3 my-2">
-      <span className="flex-1 h-px bg-border/60" />
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        начало диалога · сегодня
+    <li className="grid grid-cols-[80px_1fr] items-baseline gap-5 nb-fade-up">
+      <span
+        className={cn(
+          "font-mono text-[10px] tracking-[0.18em] uppercase",
+          isAi ? "text-primary" : "text-muted-foreground",
+        )}
+      >
+        {isAi ? "Бриф" : "Клиент"}
+        {message.meta && (
+          <span className="block mt-1 text-muted-foreground/70 normal-case tracking-[0.06em]">
+            {message.meta}
+          </span>
+        )}
       </span>
-      <span className="flex-1 h-px bg-border/60" />
-    </div>
+      <p
+        className={cn(
+          "text-balance",
+          isAi
+            ? "font-display text-[19px] leading-[1.4] italic text-foreground"
+            : "text-[16px] leading-[1.55] text-subtle-foreground",
+        )}
+      >
+        — {message.text}
+      </p>
+    </li>
   )
 }
 
-function CheckIcon() {
+function TypingLine() {
   return (
-    <svg viewBox="0 0 12 12" width="11" height="11" fill="none" aria-hidden>
-      <path
-        d="M2.5 6.2L4.7 8.4L9.5 3.6"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function ArrowSm() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path
-        d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <li className="grid grid-cols-[80px_1fr] items-baseline gap-5 nb-fade-in">
+      <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-primary">
+        Бриф
+      </span>
+      <span className="inline-flex items-center gap-1 pt-2">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="block size-1 rounded-full bg-foreground/60"
+            style={{
+              animation: `nb-pulse-dot 1.2s ${i * 0.18}s infinite cubic-bezier(0.45, 0, 0.55, 1)`,
+            }}
+          />
+        ))}
+        <span className="sr-only">Готовит вопрос</span>
+      </span>
+    </li>
   )
 }
 

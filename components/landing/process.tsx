@@ -2,77 +2,81 @@ import { Reveal } from "@/components/reveal"
 
 const STEPS = [
   {
-    n: "01",
-    title: "Диалог с AI",
-    text: "Отвечаете на 8–12 точечных вопросов в чате. Без шаблонов и без лишних полей.",
-    time: "≈ 4 мин",
+    n: "I",
+    title: "Диалог",
+    text:
+      "Восемь — двенадцать вопросов в чате. Без шаблонов и без полей «комментарий», в которые никто никогда не пишет.",
+    time: "≈ 4 минуты",
   },
   {
-    n: "02",
-    title: "Анализ ответов",
-    text: "Нейросеть классифицирует проект, подбирает функционал и расставляет приоритеты.",
-    time: "≈ 30 сек",
+    n: "II",
+    title: "Анализ",
+    text:
+      "Нейросеть классифицирует проект, расставляет приоритеты и сводит ответы в логически связанные разделы.",
+    time: "≈ 30 секунд",
   },
   {
-    n: "03",
-    title: "Готовое ТЗ",
-    text: "Получаете структурированный документ с целями, аудиторией, функциями и палитрой.",
-    time: "≈ 10 сек",
+    n: "III",
+    title: "Документ",
+    text:
+      "Получаете подробное ТЗ. Можно отправить разработчикам, выгрузить PDF или продолжить править вручную.",
+    time: "≈ 10 секунд",
   },
 ] as const
 
 export function LandingProcess() {
   return (
-    <section className="relative border-y border-border/60 bg-background-alt/40">
-      <div aria-hidden className="absolute inset-0 nb-grid-fine opacity-30" />
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-10 py-24 lg:py-32">
+    <section className="relative border-b border-border">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-20 lg:py-28">
         <Reveal>
-          <div className="max-w-3xl mb-16">
-            <p className="nb-eyebrow mb-4">Как это работает</p>
-            <h2 className="font-display text-4xl sm:text-5xl tracking-tight font-medium text-balance">
-              Три шага между идеей и
-              <span className="font-serif italic text-primary-soft"> точным </span>
-              техническим заданием.
-            </h2>
-          </div>
+          <header className="grid lg:grid-cols-12 gap-x-10 mb-16">
+            <div className="lg:col-span-7">
+              <p className="nb-eyebrow mb-4">Глава II · Как устроено</p>
+              <h2 className="font-display font-medium tracking-[-0.015em] text-[40px] sm:text-[56px] leading-[1.02] text-balance">
+                Три шага между идеей
+                <br />
+                <span className="italic">и точным заданием</span>.
+              </h2>
+            </div>
+            <p className="lg:col-span-5 self-end text-[15px] text-subtle-foreground leading-relaxed max-w-md">
+              Каждый шаг отделён от следующего ровно настолько, чтобы
+              можно было остановиться, перечитать и поправить — но не
+              настолько, чтобы заскучать.
+            </p>
+          </header>
         </Reveal>
 
-        <div className="relative grid lg:grid-cols-3 gap-px bg-border/60 rounded-2xl overflow-hidden border border-border/60">
-          {/* Connecting animated line on desktop */}
-          <div
-            aria-hidden
-            className="hidden lg:block absolute top-[88px] left-[8%] right-[8%] h-px"
-          >
-            <div className="relative h-full">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-              <div className="absolute -top-[2px] h-[5px] w-[5px] rounded-full bg-primary-soft shadow-[0_0_12px_2px_oklch(0.78_0.14_295)] left-1/2" />
-            </div>
-          </div>
-
+        <ol className="grid lg:grid-cols-3 border-t border-border">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 80}>
-              <article className="relative h-full bg-background p-8 lg:p-10">
+              <li
+                className={`relative h-full p-8 lg:p-10 border-b lg:border-b-0 ${
+                  i < STEPS.length - 1 ? "lg:border-r" : ""
+                } border-border`}
+              >
                 <div className="flex items-baseline justify-between">
-                  <span className="font-mono text-xs text-muted-foreground tracking-widest">
-                    ШАГ {s.n}
+                  <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-muted-foreground">
+                    Шаг
                   </span>
-                  <span className="font-mono text-[10px] text-primary-soft">{s.time}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {s.time}
+                  </span>
                 </div>
 
-                <div className="mt-12 grid place-items-center size-14 rounded-xl border border-border/70 bg-surface/60">
-                  <span className="font-display text-xl tracking-tight">{s.n}</span>
-                </div>
+                <p className="mt-12 font-display text-[88px] leading-none tracking-tight italic text-primary">
+                  {s.n}
+                </p>
 
-                <h3 className="mt-5 font-display text-2xl tracking-tight font-medium">
+                <h3 className="mt-8 font-display text-[28px] tracking-tight font-medium">
                   {s.title}
                 </h3>
-                <p className="mt-2.5 text-subtle-foreground leading-relaxed max-w-sm">
+                <p className="mt-3 text-[15px] leading-relaxed text-subtle-foreground max-w-sm">
                   {s.text}
                 </p>
-              </article>
+              </li>
             </Reveal>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   )

@@ -14,7 +14,7 @@ const manrope = Manrope({
 
 const lora = Lora({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-serif-editorial",
   display: "swap",
@@ -27,9 +27,9 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "NeuralBrief — ТЗ за пять минут вместо двух часов",
+  title: "NeuralBrief — техническое задание из диалога",
   description:
-    "AI-ассистент веб-студии. Задаёт нужные вопросы, понимает цели и формирует техническое задание автоматически.",
+    "AI-ассистент веб-студии. Превращает разговор с клиентом в подробное техническое задание за пять минут.",
   generator: "v0.app",
   applicationName: "NeuralBrief",
   keywords: [
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     "NeuralBrief",
   ],
   openGraph: {
-    title: "NeuralBrief — ТЗ за пять минут вместо двух часов",
+    title: "NeuralBrief — техническое задание из диалога",
     description:
       "AI-ассистент веб-студии. Задаёт нужные вопросы и формирует ТЗ автоматически.",
     locale: "ru_RU",
@@ -49,10 +49,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#16131f",
+  themeColor: "#f4eedf",
   width: "device-width",
   initialScale: 1,
-  colorScheme: "dark",
+  colorScheme: "light",
 }
 
 export default function RootLayout({
@@ -63,20 +63,19 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      className={`dark bg-background ${manrope.variable} ${lora.variable} ${jetbrainsMono.variable}`}
+      className={`bg-background ${manrope.variable} ${lora.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/30">
+      <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground">
         <SiteNav />
-        <main className="flex-1 nb-page-enter">{children}</main>
+        <main className="flex-1">{children}</main>
         <SiteFooter />
         <Toaster
           position="bottom-right"
-          theme="dark"
           toastOptions={{
             style: {
-              background: "oklch(0.20 0.025 280)",
-              border: "1px solid oklch(0.30 0.025 280)",
-              color: "oklch(0.965 0.008 280)",
+              background: "oklch(0.99 0.008 90)",
+              border: "1px solid oklch(0.84 0.014 75)",
+              color: "oklch(0.18 0.012 60)",
             },
           }}
         />
