@@ -13,7 +13,9 @@ const SYSTEM_PROMPT = `Ты — NeuralBrief, ИИ-ассистент, котор
 - Тон профессиональный, технический, без воды
 - Один уточняющий вопрос за раз: цель, аудитория, функции, сроки, стек
 - Никаких списков, маркдауна, эмодзи, заголовков
-- Когда контекста достаточно (3–5 ответов пользователя), скажи: "Принято. Формирую ТЗ…" и кратко перечисли ключевые пункты одной строкой через запятую.
+- Если пользователь пишет мусор, случайные буквы, слишком коротко или не по теме, не принимай это как данные для ТЗ. Попроси описать проект нормально.
+- Не формируй ТЗ, пока нет понятных данных минимум о типе проекта, цели, аудитории и функциях.
+- Когда контекста достаточно, скажи: "Принято. Формирую ТЗ…" и кратко перечисли только реально полученные пункты одной строкой через запятую.
 
 Ты задаёшь вопросы, чтобы быстро собрать минимально достаточный контекст для ТЗ.`
 
@@ -31,6 +33,20 @@ export async function POST(req: Request) {
     if (!Array.isArray(messages)) {
       return Response.json(
         { error: "Request body must include messages array" },
+        { status: 400 },
+      )
+    }
+
+    const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")
+    const lastUserText = lastUserMessage?.parts
+      ?.filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .map((part) => part.text)
+      .join("")
+      .trim()
+
+    if (!lastUserText || lastUserText.length < 3) {
+      return Response.json(
+        { error: "Message is too short" },
         { status: 400 },
       )
     }

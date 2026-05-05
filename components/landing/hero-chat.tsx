@@ -7,21 +7,11 @@ import { useEffect, useRef, useState, type FormEvent } from "react"
 
 type Role = "ai" | "user"
 
-const SEED_MESSAGES: UIMessage[] = [
+const INITIAL_MESSAGES: UIMessage[] = [
   {
     id: "seed-1",
     role: "assistant",
     parts: [{ type: "text", text: "Здравствуйте. Что вы хотите создать?" }],
-  },
-  {
-    id: "seed-2",
-    role: "user",
-    parts: [{ type: "text", text: "Лендинг для сервиса доставки еды." }],
-  },
-  {
-    id: "seed-3",
-    role: "assistant",
-    parts: [{ type: "text", text: "Кто целевая аудитория?" }],
   },
 ]
 
@@ -36,7 +26,7 @@ function getText(m: UIMessage): string {
 export function HeroChat() {
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/hero-chat" }),
-    messages: SEED_MESSAGES,
+    messages: INITIAL_MESSAGES,
   })
 
   const [input, setInput] = useState("")
@@ -53,7 +43,7 @@ export function HeroChat() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     const value = input.trim()
-    if (!value || isStreaming) return
+    if (value.length < 3 || isStreaming) return
     sendMessage({ text: value })
     setInput("")
   }

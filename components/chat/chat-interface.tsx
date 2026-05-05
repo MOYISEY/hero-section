@@ -1,9 +1,11 @@
-"use client"
+﻿"use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport, type UIMessage } from "ai"
 import Link from "next/link"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 
 type Step = {
   id: string
@@ -20,146 +22,65 @@ const STEPS: Step[] = [
   { id: "06", label: "Сроки и формат", hint: "Когда и в каком виде" },
 ]
 
-type Message = {
-  id: number
-  from: "ai" | "user"
-  text: string
-  meta?: string
-}
-
-const DEMO: Message[] = [
+const INITIAL_MESSAGES: UIMessage[] = [
   {
-    id: 1,
-    from: "ai",
-    text:
-      "Здравствуйте. Я помогу вам собрать техническое задание. Начнём с главного: что мы строим — лендинг, многостраничный сайт, интернет-магазин или что-то ещё?",
-    meta: "Шаг 01",
-  },
-  { id: 2, from: "user", text: "Лендинг для нашего digital-агентства." },
-  {
-    id: 3,
-    from: "ai",
-    text:
-      "Хорошо, лендинг. Какой главной цели страница должна достигать после запуска? Например: первые заявки, рост узнаваемости, продажа конкретной услуги.",
-    meta: "Шаг 02",
-  },
-  {
-    id: 4,
-    from: "user",
-    text: "Пока нет подтверждённых целей по заявкам.",
-  },
-  {
-    id: 5,
-    from: "ai",
-    text:
-      "Принято. А кто эти будущие клиенты? Опишите портрет: чем занимаются, какой возраст, с каких устройств чаще зайдут.",
-    meta: "Шаг 03",
-  },
-  {
-    id: 6,
-    from: "user",
-    text:
-      "Владельцы малого и среднего бизнеса. Точных данных по устройствам пока нет.",
-  },
-  {
-    id: 7,
-    from: "ai",
-    text:
-      "Перехожу к функциональности. Предлагаю обязательные блоки: hero с УТП, кейсы, форма заявки с интеграцией CRM, калькулятор стоимости. Что-то добавим, уберём или поменяем?",
-    meta: "Шаг 04",
-  },
-  {
-    id: 8,
-    from: "user",
-    text:
-      "Всё нужно. Дополнительно — блок с отзывами и онлайн-чат с менеджером.",
-  },
-  {
-    id: 9,
-    from: "ai",
-    text:
-      "Записал. Последний короткий блок про дизайн: какой характер сайта вам ближе — строгий и минималистичный, тёплый и человечный или технологичный?",
-    meta: "Шаг 05",
+    id: "start",
+    role: "assistant",
+    parts: [
+      {
+        type: "text",
+        text:
+          "Здравствуйте. Я помогу собрать ТЗ. Начнём с главного: что вы хотите создать?",
+      },
+    ],
   },
 ]
 
+function getText(message: UIMessage): string {
+  if (!message.parts || !Array.isArray(message.parts)) return ""
+  return message.parts
+    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .map((part) => part.text)
+    .join("")
+}
+
 export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>(() => DEMO.slice(0, 1))
-  const [typing, setTyping] = useState(false)
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/hero-chat" }),
+    messages: INITIAL_MESSAGES,
+  })
   const [input, setInput] = useState("")
-  const [stepIndex, setStepIndex] = useState(0)
-  const [done, setDone] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const queue = DEMO.slice(1)
-
-    async function play() {
-      for (const m of queue) {
-        if (cancelled) return
-        if (m.from === "ai") {
-          setTyping(true)
-          await wait(1300)
-          if (cancelled) return
-          setTyping(false)
-        } else {
-          await wait(700)
-        }
-        if (cancelled) return
-        setMessages((prev) => [...prev, m])
-        if (m.meta) {
-          const idx = STEPS.findIndex((s) => m.meta?.includes(s.id))
-          if (idx >= 0) setStepIndex(idx)
-        }
-      }
-      if (!cancelled) {
-        await wait(700)
-        setDone(true)
-      }
-    }
-    play()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const isStreaming = status === "submitted" || status === "streaming"
+  const userMessagesCount = messages.filter((message) => message.role === "user").length
+  const stepIndex = Math.min(userMessagesCount, STEPS.length - 1)
+  const progress = Math.round(((stepIndex + 1) / STEPS.length) * 100)
+  const done = userMessagesCount >= 4
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
-  }, [messages, typing])
+  }, [messages, isStreaming])
 
-  function handleSend(e?: React.FormEvent) {
+  function handleSend(e?: FormEvent) {
     e?.preventDefault()
     const value = input.trim()
-    if (!value) return
-    const newMsg: Message = { id: Date.now(), from: "user", text: value }
-    setMessages((prev) => [...prev, newMsg])
+    if (!value || isStreaming) return
+
+    if (value.length < 3) {
+      toast("Сообщение слишком короткое", {
+        description: "Опишите проект чуть подробнее, чтобы AI мог собрать ТЗ.",
+      })
+      return
+    }
+
+    sendMessage({ text: value })
     setInput("")
-
-    setTyping(true)
-    setTimeout(() => {
-      setTyping(false)
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          from: "ai",
-          text:
-            "Понял вас. Сохранил эту вводную в раздел брифа. Продолжим, когда будете готовы сформировать ТЗ.",
-        },
-      ])
-      if (stepIndex < STEPS.length - 1) setStepIndex((i) => i + 1)
-      setDone(true)
-    }, 1200)
   }
-
-  const progress = Math.round(((stepIndex + 1) / STEPS.length) * 100)
 
   return (
     <div className="relative">
-      {/* Page masthead */}
       <div className="border-b border-border">
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-4 flex items-center justify-between text-[11px] font-mono tracking-[0.16em] uppercase text-muted-foreground">
           <span className="inline-flex items-center gap-2">
@@ -167,30 +88,27 @@ export function ChatInterface() {
             / trace · live session
           </span>
           <span>SESSION 0</span>
-          <span>NODE.12</span>
+          <span>GROQ</span>
         </div>
       </div>
 
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 pb-20">
-        {/* Header */}
         <header className="grid lg:grid-cols-12 gap-x-10 gap-y-6 mb-12 pb-12 border-b border-border">
           <div className="lg:col-span-7">
-            <p className="nb-eyebrow mb-4">/ демо · диалог</p>
+            <p className="nb-eyebrow mb-4">/ live · диалог</p>
             <h1 className="font-display font-medium tracking-[-0.025em] text-[44px] sm:text-[64px] leading-[1.0] text-balance">
-              Беседа с системой,
+              Беседа с AI,
               <br />
-              <span className="text-primary">которой не нужен черновик</span>.
+              <span className="text-primary">которая собирает ТЗ</span>.
             </h1>
           </div>
           <p className="lg:col-span-5 self-end max-w-md text-[15px] text-subtle-foreground leading-relaxed">
-            Ниже проигрывается заранее записанный фрагмент. Когда демо
-            закончится, можно подключиться и продолжить разговор своими
-            словами.
+            Здесь начинается реальная работа AI. Опишите проект своими словами,
+            а система будет задавать уточняющие вопросы для технического задания.
           </p>
         </header>
 
         <div className="grid lg:grid-cols-[280px_1fr] gap-10">
-          {/* Sidebar — печатное оглавление */}
           <aside className="lg:sticky lg:top-24 self-start">
             <div className="border-y border-border py-6">
               <div className="flex items-baseline justify-between mb-4">
@@ -264,7 +182,6 @@ export function ChatInterface() {
               })}
             </ol>
 
-            {/* Generate brief */}
             <div
               className={cn(
                 "mt-8 transition-all duration-700",
@@ -275,7 +192,7 @@ export function ChatInterface() {
             >
               <p className="nb-eyebrow mb-3">Готово к вёрстке</p>
               <p className="text-[14px] text-subtle-foreground leading-relaxed mb-4">
-                Достаточно данных, чтобы сверстать черновик ТЗ.
+                Если данных достаточно, можно открыть черновик ТЗ.
               </p>
               <Link
                 href="/brief"
@@ -295,7 +212,6 @@ export function ChatInterface() {
             </div>
           </aside>
 
-          {/* Transcript */}
           <section className="border-l border-border lg:pl-10 -ml-6 pl-6 lg:ml-0">
             <div className="flex items-baseline justify-between pb-4 border-b border-border">
               <p className="font-display text-xl tracking-tight inline-flex items-center gap-3">
@@ -303,7 +219,7 @@ export function ChatInterface() {
                 trace · <span className="text-primary">Astana IT University</span>
               </p>
               <span className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
-                запись 05.05.2026
+                live session
               </span>
             </div>
 
@@ -312,10 +228,12 @@ export function ChatInterface() {
               className="py-6 max-h-[640px] overflow-y-auto pr-2"
             >
               <ol className="flex flex-col gap-7">
-                {messages.map((m) => (
-                  <Line key={m.id} message={m} />
-                ))}
-                {typing && <TypingLine />}
+                {messages.map((message) => {
+                  const text = getText(message)
+                  if (!text) return null
+                  return <Line key={message.id} message={message} text={text} />
+                })}
+                {status === "submitted" && <TypingLine />}
               </ol>
             </div>
 
@@ -330,16 +248,17 @@ export function ChatInterface() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Напишите свободно, как сказали бы в разговоре…"
+                    placeholder="Опишите проект своими словами…"
                     className="flex-1 bg-transparent outline-none text-[16px] text-foreground placeholder:text-muted-foreground py-1 font-display"
                     aria-label="Ваше сообщение"
+                    disabled={isStreaming}
                   />
                   <button
                     type="button"
                     onClick={() =>
                       toast("Голосовой ввод", {
                         description:
-                          "В демо доступен только текстовый режим.",
+                          "Сейчас доступен текстовый режим. Голосовой ввод подключим отдельно.",
                       })
                     }
                     className="text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest"
@@ -348,7 +267,7 @@ export function ChatInterface() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || isStreaming}
                     className="font-mono text-[12px] uppercase tracking-widest text-foreground disabled:opacity-30 nb-link disabled:no-underline"
                   >
                     Отправить →
@@ -356,7 +275,7 @@ export function ChatInterface() {
                 </div>
               </label>
               <p className="mt-3 font-mono text-[11px] text-muted-foreground tracking-wide">
-                Enter — отправить · Shift + Enter — новая строка
+                Enter — отправить
               </p>
             </form>
           </section>
@@ -366,8 +285,8 @@ export function ChatInterface() {
   )
 }
 
-function Line({ message }: { message: Message }) {
-  const isAi = message.from === "ai"
+function Line({ message, text }: { message: UIMessage; text: string }) {
+  const isAi = message.role !== "user"
   return (
     <li className="grid grid-cols-[80px_1fr] items-baseline gap-5 nb-fade-up">
       <span
@@ -377,21 +296,16 @@ function Line({ message }: { message: Message }) {
         )}
       >
         {isAi ? "Бриф" : "Клиент"}
-        {message.meta && (
-          <span className="block mt-1 text-muted-foreground/70 normal-case tracking-[0.06em]">
-            {message.meta}
-          </span>
-        )}
       </span>
       <p
         className={cn(
           "text-balance",
           isAi
-                ? "font-display text-[19px] leading-[1.4] text-foreground"
+            ? "font-display text-[19px] leading-[1.4] text-foreground"
             : "text-[16px] leading-[1.55] text-subtle-foreground",
         )}
       >
-        — {message.text}
+        — {text}
       </p>
     </li>
   )
@@ -414,12 +328,8 @@ function TypingLine() {
             }}
           />
         ))}
-        <span className="sr-only">Гот��вит вопрос</span>
+        <span className="sr-only">Готовит вопрос</span>
       </span>
     </li>
   )
-}
-
-function wait(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms))
 }
