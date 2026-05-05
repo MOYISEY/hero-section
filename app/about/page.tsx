@@ -20,7 +20,7 @@ export default function AboutPage() {
           <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl tracking-tight font-medium text-balance leading-[0.98] max-w-5xl">
             Построено на нейронных сетях.
             <br />
-            <span className="font-serif italic text-primary-soft">
+            <span className="text-primary">
               Обучено на работе настоящих студий.
             </span>
           </h1>
@@ -40,7 +40,7 @@ export default function AboutPage() {
               <p className="nb-eyebrow mb-4">Как это работает</p>
               <h2 className="font-display text-4xl sm:text-5xl tracking-tight font-medium text-balance">
                 Между идеей и заданием —
-                <span className="font-serif italic text-primary-soft"> ровно три шага</span>.
+                <span className="text-primary"> ровно три шага</span>.
               </h2>
             </div>
           </Reveal>
@@ -52,9 +52,9 @@ export default function AboutPage() {
               className="hidden lg:block absolute top-[156px] left-[12%] right-[12%] h-px"
             >
               <div className="relative h-full bg-gradient-to-r from-transparent via-primary/45 to-transparent">
-                <div className="absolute -top-[3px] size-2 rounded-full bg-primary-soft shadow-[0_0_14px_3px_oklch(0.78_0.14_295)] left-[16%]" />
-                <div className="absolute -top-[3px] size-2 rounded-full bg-primary-soft shadow-[0_0_14px_3px_oklch(0.78_0.14_295)] left-1/2" />
-                <div className="absolute -top-[3px] size-2 rounded-full bg-primary-soft shadow-[0_0_14px_3px_oklch(0.78_0.14_295)] left-[83%]" />
+                <div className="absolute -top-[3px] size-2 rounded-full bg-primary-soft shadow-[0_0_14px_3px_oklch(0.82_0.16_200)] left-[16%]" />
+                <div className="absolute -top-[3px] size-2 rounded-full bg-primary-soft shadow-[0_0_14px_3px_oklch(0.82_0.16_200)] left-1/2" />
+                <div className="absolute -top-[3px] size-2 rounded-full bg-primary-soft shadow-[0_0_14px_3px_oklch(0.82_0.16_200)] left-[83%]" />
               </div>
             </div>
 
@@ -111,7 +111,7 @@ export default function AboutPage() {
             <p className="nb-eyebrow">Цифры</p>
             <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight font-medium text-balance leading-[1.05] max-w-3xl">
               За пять месяцев работы NeuralBrief заменил
-              <span className="font-serif italic text-primary-soft"> 312 часов </span>
+              <span className="text-primary"> 312 часов </span>
               созвонов и таблиц.
             </h2>
           </div>
@@ -162,7 +162,7 @@ export default function AboutPage() {
                 <h2 className="font-display text-4xl sm:text-5xl tracking-tight font-medium text-balance leading-[1.02]">
                   Не «универсальный» GPT.
                   <br />
-                  <span className="font-serif italic text-primary-soft">
+                  <span className="text-primary">
                     Узкая модель под одну задачу.
                   </span>
                 </h2>
@@ -218,7 +218,7 @@ export default function AboutPage() {
                 <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight font-medium leading-[1.02] max-w-2xl text-balance">
                   Достаточно слов о системе.
                   <br />
-                  <span className="font-serif italic text-primary-soft">
+                  <span className="text-primary">
                     Попробуйте сами.
                   </span>
                 </h2>
@@ -229,11 +229,11 @@ export default function AboutPage() {
               </div>
               <Link
                 href="/chat"
-                className="group inline-flex items-center gap-3 rounded-full bg-foreground text-background pl-6 pr-2 py-3 text-[15px] font-medium hover:bg-primary hover:text-primary-foreground transition-colors duration-500 self-start lg:self-auto"
+                className="group inline-flex items-center gap-3 bg-primary text-primary-foreground pl-6 pr-2 py-3 text-[15px] font-medium hover:bg-primary-soft transition-colors duration-500 self-start lg:self-auto"
                 style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
               >
                 Начать диалог
-                <span className="grid place-items-center size-9 rounded-full bg-background/15 group-hover:translate-x-1 transition-transform duration-500">
+                <span className="grid place-items-center size-9 bg-primary-foreground/15 group-hover:translate-x-1 transition-transform duration-500">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
                     <path
                       d="M3 8h10m0 0L8.5 3.5M13 8l-4.5 4.5"

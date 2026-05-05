@@ -31,16 +31,16 @@ export function LandingProcess() {
         <Reveal>
           <header className="grid lg:grid-cols-12 gap-x-10 mb-16">
             <div className="lg:col-span-7">
-              <p className="nb-eyebrow mb-4">Глава II · Как устроено</p>
-              <h2 className="font-display font-medium tracking-[-0.015em] text-[40px] sm:text-[56px] leading-[1.02] text-balance">
+              <p className="nb-eyebrow mb-4">/ модуль 03 · pipeline</p>
+              <h2 className="font-display font-medium tracking-[-0.02em] text-[40px] sm:text-[56px] leading-[1.02] text-balance">
                 Три шага между идеей
                 <br />
-                <span className="italic">и точным заданием</span>.
+                <span className="text-primary">и точным заданием</span>.
               </h2>
             </div>
             <p className="lg:col-span-5 self-end text-[15px] text-subtle-foreground leading-relaxed max-w-md">
               Каждый шаг отделён от следующего ровно настолько, чтобы
-              можно было остановиться, перечитать и поправить — но не
+              можно было остановиться, перечитать и поправить, но не
               настолько, чтобы заскучать.
             </p>
           </header>
@@ -52,18 +52,19 @@ export function LandingProcess() {
               <li
                 className={`relative h-full p-8 lg:p-10 border-b lg:border-b-0 ${
                   i < STEPS.length - 1 ? "lg:border-r" : ""
-                } border-border`}
+                } border-border bg-surface/40`}
               >
                 <div className="flex items-baseline justify-between">
-                  <span className="font-mono text-[11px] tracking-[0.18em] uppercase text-muted-foreground">
-                    Шаг
+                  <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.18em] uppercase text-muted-foreground">
+                    <span aria-hidden className="size-1 rounded-full bg-primary" />
+                    step
                   </span>
                   <span className="font-mono text-[11px] text-muted-foreground">
                     {s.time}
                   </span>
                 </div>
 
-                <p className="mt-12 font-display text-[88px] leading-none tracking-tight italic text-primary">
+                <p className="mt-12 font-display text-[88px] leading-none tracking-tight font-medium text-primary">
                   {s.n}
                 </p>
 

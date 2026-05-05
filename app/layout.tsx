@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Manrope, Lora, JetBrains_Mono } from "next/font/google"
+import { Manrope, Space_Grotesk, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { SiteNav } from "@/components/site-nav"
@@ -12,11 +12,10 @@ const manrope = Manrope({
   display: "swap",
 })
 
-const lora = Lora({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-serif-editorial",
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-display-tech",
   display: "swap",
 })
 
@@ -49,10 +48,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#f4eedf",
+  themeColor: "#0c1220",
   width: "device-width",
   initialScale: 1,
-  colorScheme: "light",
+  colorScheme: "dark",
 }
 
 export default function RootLayout({
@@ -63,7 +62,7 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      className={`bg-background ${manrope.variable} ${lora.variable} ${jetbrainsMono.variable}`}
+      className={`bg-background ${manrope.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground">
         <SiteNav />
@@ -73,9 +72,9 @@ export default function RootLayout({
           position="bottom-right"
           toastOptions={{
             style: {
-              background: "oklch(0.99 0.008 90)",
-              border: "1px solid oklch(0.84 0.014 75)",
-              color: "oklch(0.18 0.012 60)",
+              background: "oklch(0.22 0.022 248)",
+              border: "1px solid oklch(0.32 0.020 248)",
+              color: "oklch(0.96 0.008 230)",
             },
           }}
         />

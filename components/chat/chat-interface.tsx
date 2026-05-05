@@ -162,9 +162,12 @@ export function ChatInterface() {
       {/* Page masthead */}
       <div className="border-b border-border">
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-4 flex items-center justify-between text-[11px] font-mono tracking-[0.16em] uppercase text-muted-foreground">
-          <span>Глава II · Стенограмма</span>
-          <span>Сессия № 4 248</span>
-          <span>стр. 12</span>
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden className="nb-status-dot" />
+            / trace · live session
+          </span>
+          <span>SESSION 4 248</span>
+          <span>NODE.12</span>
         </div>
       </div>
 
@@ -172,11 +175,11 @@ export function ChatInterface() {
         {/* Header */}
         <header className="grid lg:grid-cols-12 gap-x-10 gap-y-6 mb-12 pb-12 border-b border-border">
           <div className="lg:col-span-7">
-            <p className="nb-eyebrow mb-4">Демо-диалог</p>
-            <h1 className="font-display font-medium tracking-[-0.015em] text-[44px] sm:text-[64px] leading-[1.0] text-balance">
-              Беседа с редактором,
+            <p className="nb-eyebrow mb-4">/ демо · диалог</p>
+            <h1 className="font-display font-medium tracking-[-0.025em] text-[44px] sm:text-[64px] leading-[1.0] text-balance">
+              Беседа с системой,
               <br />
-              <span className="italic">которому не нужен черновик</span>.
+              <span className="text-primary">которой не нужен черновик</span>.
             </h1>
           </div>
           <p className="lg:col-span-5 self-end max-w-md text-[15px] text-subtle-foreground leading-relaxed">
@@ -207,7 +210,7 @@ export function ChatInterface() {
               </div>
               <p className="font-display text-xl leading-tight">
                 Шаг {STEPS[stepIndex].id} ·{" "}
-                <span className="italic">{STEPS[stepIndex].label}</span>
+                <span className="text-primary">{STEPS[stepIndex].label}</span>
               </p>
               <p className="mt-1.5 text-[13px] text-muted-foreground">
                 {STEPS[stepIndex].hint}
@@ -240,7 +243,7 @@ export function ChatInterface() {
                       className={cn(
                         "text-[14px]",
                         state === "active" &&
-                          "font-display italic text-[16px] leading-tight",
+                          "font-display text-primary text-[16px] leading-tight",
                       )}
                     >
                       {s.label}
@@ -276,12 +279,18 @@ export function ChatInterface() {
               </p>
               <Link
                 href="/brief"
-                className="inline-flex items-baseline gap-2 font-display italic text-2xl"
+                className="inline-flex items-center gap-3 bg-primary text-primary-foreground px-5 py-3 text-[14px] font-medium tracking-tight transition-colors hover:bg-primary-soft"
               >
-                <span className="font-mono text-[10px] tracking-[0.18em] uppercase not-italic text-muted-foreground">
-                  →
-                </span>
-                <span className="nb-link">Собрать ТЗ</span>
+                <span>Собрать ТЗ</span>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                  <path
+                    d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </Link>
             </div>
           </aside>
@@ -289,9 +298,9 @@ export function ChatInterface() {
           {/* Transcript */}
           <section className="border-l border-border lg:pl-10 -ml-6 pl-6 lg:ml-0">
             <div className="flex items-baseline justify-between pb-4 border-b border-border">
-              <p className="font-display text-xl tracking-tight">
-                Стенограмма ·{" "}
-                <span className="italic">Praktika.web</span>
+              <p className="font-display text-xl tracking-tight inline-flex items-center gap-3">
+                <span aria-hidden className="size-1.5 rounded-full bg-primary nb-blink" />
+                trace · <span className="text-primary">Praktika.web</span>
               </p>
               <span className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
                 запись 05.05.2026
@@ -378,7 +387,7 @@ function Line({ message }: { message: Message }) {
         className={cn(
           "text-balance",
           isAi
-            ? "font-display text-[19px] leading-[1.4] italic text-foreground"
+                ? "font-display text-[19px] leading-[1.4] text-foreground"
             : "text-[16px] leading-[1.55] text-subtle-foreground",
         )}
       >
@@ -405,7 +414,7 @@ function TypingLine() {
             }}
           />
         ))}
-        <span className="sr-only">Готовит вопрос</span>
+        <span className="sr-only">Гот��вит вопрос</span>
       </span>
     </li>
   )

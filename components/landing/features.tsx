@@ -15,14 +15,14 @@ export function LandingFeatures() {
         <Reveal>
           <header className="flex items-end justify-between flex-wrap gap-6 mb-12">
             <div className="max-w-2xl">
-              <p className="nb-eyebrow mb-4">Глава I · Метод</p>
-              <h2 className="font-display font-medium tracking-[-0.015em] text-[40px] sm:text-[52px] leading-[1.02] text-balance">
+              <p className="nb-eyebrow mb-4">/ модуль 01 · метод</p>
+              <h2 className="font-display font-medium tracking-[-0.02em] text-[40px] sm:text-[52px] leading-[1.02] text-balance">
                 NeuralBrief задаёт вопросы,
                 <br />
-                <span className="italic">а не заполняет анкету</span>.
+                <span className="text-primary">а не заполняет анкету</span>.
               </h2>
             </div>
-            <p className="nb-folio uppercase tracking-widest">стр. 04 — 05</p>
+            <p className="nb-folio uppercase tracking-widest">node 04 / 05</p>
           </header>
         </Reveal>
 
@@ -33,7 +33,7 @@ export function LandingFeatures() {
 
           <Reveal className="lg:col-span-5 lg:pt-12" delay={120}>
             <div className="lg:border-l lg:border-border lg:pl-10">
-              <p className="nb-eyebrow mb-4">Заметки на полях</p>
+              <p className="nb-eyebrow mb-4">/ trace · логика</p>
               <p className="nb-pullquote text-[28px] leading-[1.15] text-balance">
                 «Если у вас интернет-магазин, я спрошу о категориях
                 и оплате. Если лендинг — о целевом действии и
@@ -73,16 +73,16 @@ export function LandingFeatures() {
           <Reveal>
             <header className="grid lg:grid-cols-12 gap-x-10 mb-14">
               <div className="lg:col-span-7">
-                <p className="nb-eyebrow mb-4">Содержание · Что внутри</p>
-                <h2 className="font-display font-medium tracking-[-0.015em] text-[40px] sm:text-[52px] leading-[1.02] text-balance">
+                <p className="nb-eyebrow mb-4">/ структура · что внутри</p>
+                <h2 className="font-display font-medium tracking-[-0.02em] text-[40px] sm:text-[52px] leading-[1.02] text-balance">
                   Пять разделов, из которых
                   <br />
-                  <span className="italic">собирается каждое ТЗ</span>.
+                  <span className="text-primary">собирается каждое ТЗ</span>.
                 </h2>
               </div>
               <p className="lg:col-span-5 self-end text-[15px] text-subtle-foreground leading-relaxed max-w-md">
                 NeuralBrief работает не как болтливый чат-бот, а как
-                редактор: разделяет ответы по главам и не теряет
+                редактор: разделяет ответы по разделам и не теряет
                 ни одной важной детали.
               </p>
             </header>
@@ -103,11 +103,11 @@ export function LandingFeatures() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-20 lg:py-28">
           <div className="grid lg:grid-cols-12 gap-x-10 gap-y-12">
             <Reveal className="lg:col-span-5">
-              <p className="nb-eyebrow mb-4">Иллюстрация · 02</p>
-              <h3 className="font-display font-medium tracking-[-0.015em] text-[36px] leading-[1.05] text-balance">
-                Палитра подбирается так же,
+              <p className="nb-eyebrow mb-4">/ модуль 02 · палитра</p>
+              <h3 className="font-display font-medium tracking-[-0.02em] text-[36px] leading-[1.05] text-balance">
+                Палитра рассчитывается,
                 <br />
-                <span className="italic">как редактор подбирает обложку</span>.
+                <span className="text-primary">а не подбирается на глаз</span>.
               </h3>
               <p className="mt-5 max-w-md text-[15px] text-subtle-foreground leading-relaxed">
                 Тон бренда, характер аудитории, отрасль. На выходе три,
@@ -115,7 +115,7 @@ export function LandingFeatures() {
                 нужен в макете.
               </p>
               <p className="mt-8 nb-folio uppercase tracking-widest">
-                Пример для агентства недвижимости
+                / пример: агентство недвижимости
               </p>
             </Reveal>
 
@@ -124,7 +124,7 @@ export function LandingFeatures() {
                 {SWATCHES.map((s) => (
                   <div
                     key={s.hex}
-                    className="border-r last:border-r-0 border-border"
+                    className="border-r last:border-r-0 border-border bg-surface"
                   >
                     <div
                       className="aspect-[3/4]"
@@ -147,19 +147,21 @@ export function LandingFeatures() {
               <figure className="mt-10 grid grid-cols-12 items-end gap-6">
                 <div className="col-span-7 relative aspect-[5/4] overflow-hidden border border-border">
                   <Image
-                    src="/editorial-sketch.jpg"
-                    alt="Рукописные эскизы блоков сайта чёрной шариковой ручкой на бумаге"
+                    src="/neural-blueprint.jpg"
+                    alt="Технический блюпринт нейронной графа: тонкие циановые линии и узлы на тёмно-синем фоне"
                     fill
                     sizes="(min-width: 1024px) 35vw, 100vw"
                     className="object-cover"
                   />
+                  <span aria-hidden className="absolute top-2 left-2 size-3 border-t border-l border-primary/70" />
+                  <span aria-hidden className="absolute bottom-2 right-2 size-3 border-b border-r border-primary/70" />
                 </div>
                 <figcaption className="col-span-5 text-[13px] text-muted-foreground leading-relaxed">
                   <span className="block nb-folio uppercase tracking-widest mb-2">
-                    фото 02
+                    / visual 02
                   </span>
-                  Прежде чем добраться до Figma, каждое ТЗ начинает свою
-                  жизнь как набросок на полях блокнота.
+                  Прежде чем добраться до Figma, каждое ТЗ проходит через
+                  карту смыслов и связей.
                 </figcaption>
               </figure>
             </Reveal>
@@ -175,31 +177,31 @@ const ENTRIES = [
     title: "Цели и задачи",
     text:
       "Уточняет, чего проект должен добиться через три месяца. Без расплывчатых формулировок «привлечь больше клиентов».",
-    page: "стр. 06",
+    page: "node.06",
   },
   {
     title: "Аудитория и устройства",
     text:
       "Кому он нужен и откуда они приходят. Доли мобильного и десктопа, языки, география.",
-    page: "стр. 09",
+    page: "node.09",
   },
   {
     title: "Функционал",
     text:
       "Список разделов и функций, разделённый на обязательные и желательные. С приоритетами и зависимостями.",
-    page: "стр. 12",
+    page: "node.12",
   },
   {
     title: "Структура и навигация",
     text:
       "Карта сайта и блоки на каждой странице. Не вайрфрейм, но достаточный каркас, чтобы дизайнер начинал не с нуля.",
-    page: "стр. 15",
+    page: "node.15",
   },
   {
     title: "Дизайн и стилистика",
     text:
       "Тон, ассоциации, палитра, типографика. Референсы, к которым стоит присмотреться, и те, которых стоит избегать.",
-    page: "стр. 18",
+    page: "node.18",
   },
 ] as const
 

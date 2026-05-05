@@ -38,7 +38,7 @@ export function BriefDocument() {
             <p className="nb-eyebrow mb-3">Техническое задание · черновик</p>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight font-medium text-balance leading-[1.02]">
               Лендинг для digital-агентства
-              <span className="font-serif italic text-primary-soft"> «Praktika.web»</span>
+              <span className="text-primary"> «Praktika.web»</span>
             </h1>
             <dl className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3 max-w-2xl">
               {[

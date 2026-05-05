@@ -10,7 +10,7 @@ const NAV = [
   { href: "/", label: "Главная", num: "01" },
   { href: "/chat", label: "Диалог", num: "02" },
   { href: "/brief", label: "Образец ТЗ", num: "03" },
-  { href: "/about", label: "О журнале", num: "04" },
+  { href: "/about", label: "О системе", num: "04" },
 ] as const
 
 export function SiteNav() {
@@ -42,8 +42,9 @@ export function SiteNav() {
           className="flex items-center gap-3 shrink-0"
           aria-label="NeuralBrief — на главную"
         >
+          <span aria-hidden className="nb-status-dot" />
           <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-            № 01 / 2026
+            v.01 / 2026
           </span>
           <span aria-hidden className="h-3 w-px bg-border" />
           <span className="font-display text-[19px] tracking-tight font-medium leading-none">
@@ -135,7 +136,7 @@ export function SiteNav() {
             ))}
             <Link
               href="/chat"
-              className="mt-4 inline-flex items-center justify-between bg-foreground text-background px-5 py-3 text-[14px] font-medium"
+              className="mt-4 inline-flex items-center justify-between bg-primary text-primary-foreground px-5 py-3 text-[14px] font-medium"
             >
               Начать диалог
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>

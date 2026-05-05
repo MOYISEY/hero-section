@@ -7,14 +7,18 @@ export function SiteFooter() {
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-5">
             <p className="font-display text-3xl tracking-tight leading-tight text-balance">
-              Журнал о том, как разговор
+              Система, которая превращает
               <br />
-              <span className="italic">превращается в задачу</span>.
+              <span className="text-primary">разговор в задачу</span>.
             </p>
             <p className="mt-6 max-w-sm text-[15px] text-subtle-foreground leading-relaxed">
               NeuralBrief задумывался как дипломная работа и оказался
               рабочим инструментом для небольших веб-студий.
             </p>
+            <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.18em] uppercase text-muted-foreground">
+              <span aria-hidden className="nb-status-dot" />
+              <span>SYSTEM ONLINE</span>
+            </div>
           </div>
 
           <FooterCol
@@ -28,11 +32,11 @@ export function SiteFooter() {
           />
           <FooterCol
             className="md:col-span-2"
-            title="Издание"
+            title="Проект"
             items={[
-              { href: "/about", label: "О журнале" },
+              { href: "/about", label: "О системе" },
               { href: "/about", label: "Метод" },
-              { href: "/about", label: "Авторы" },
+              { href: "/about", label: "Команда" },
             ]}
           />
           <FooterCol
@@ -51,7 +55,7 @@ export function SiteFooter() {
             © 2026 · NEURALBRIEF · ВСЕ ПРАВА ЗАЩИЩЕНЫ
           </span>
           <span className="font-mono tracking-wide">
-            ВЫПУСК № 01 · ВЕСНА · MMXXVI
+            BUILD 01.2026 · NODE.MOSCOW
           </span>
         </div>
       </div>

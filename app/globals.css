@@ -4,72 +4,72 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  NeuralBrief — editorial, paper-first design system.
-  Warm cream paper, deep ink, single rust accent.
-  No mesh, no glow, no glass. Magazine, not dashboard.
+  NeuralBrief — futuristic technical interface.
+  Deep space surfaces, electric cyan accent, geometric tech display.
+  No paper, no glow halos, no glass. Sharp, calm, signal-driven.
 */
 :root {
-  /* paper surfaces */
-  --background: oklch(0.965 0.014 85);
-  --background-alt: oklch(0.935 0.016 82);
-  --surface: oklch(0.99 0.008 90);
-  --surface-elevated: oklch(0.92 0.018 80);
+  /* deep space surfaces */
+  --background: oklch(0.16 0.018 250);
+  --background-alt: oklch(0.20 0.020 248);
+  --surface: oklch(0.22 0.022 248);
+  --surface-elevated: oklch(0.26 0.024 246);
 
-  /* ink */
-  --foreground: oklch(0.18 0.012 60);
-  --card: oklch(0.99 0.008 90);
-  --card-foreground: oklch(0.18 0.012 60);
-  --popover: oklch(0.99 0.008 90);
-  --popover-foreground: oklch(0.18 0.012 60);
+  /* signal text */
+  --foreground: oklch(0.96 0.008 230);
+  --card: oklch(0.22 0.022 248);
+  --card-foreground: oklch(0.96 0.008 230);
+  --popover: oklch(0.22 0.022 248);
+  --popover-foreground: oklch(0.96 0.008 230);
 
-  --muted: oklch(0.91 0.012 80);
-  --muted-foreground: oklch(0.46 0.012 60);
-  --subtle-foreground: oklch(0.32 0.012 60);
+  --muted: oklch(0.30 0.022 248);
+  --muted-foreground: oklch(0.62 0.020 235);
+  --subtle-foreground: oklch(0.78 0.014 232);
 
-  /* single accent: deep rust ink */
-  --primary: oklch(0.46 0.13 38);
-  --primary-foreground: oklch(0.97 0.012 85);
-  --primary-soft: oklch(0.50 0.13 38);
+  /* single accent: electric cyan */
+  --primary: oklch(0.82 0.16 200);
+  --primary-foreground: oklch(0.16 0.018 250);
+  --primary-soft: oklch(0.74 0.14 200);
 
-  --secondary: oklch(0.93 0.012 80);
-  --secondary-foreground: oklch(0.18 0.012 60);
+  --secondary: oklch(0.28 0.022 248);
+  --secondary-foreground: oklch(0.96 0.008 230);
 
-  --accent: oklch(0.93 0.012 80);
-  --accent-foreground: oklch(0.18 0.012 60);
+  --accent: oklch(0.28 0.022 248);
+  --accent-foreground: oklch(0.96 0.008 230);
 
-  --destructive: oklch(0.50 0.18 25);
-  --destructive-foreground: oklch(0.97 0.012 85);
+  --destructive: oklch(0.66 0.20 22);
+  --destructive-foreground: oklch(0.16 0.018 250);
 
-  --success: oklch(0.45 0.10 145);
-  --warning: oklch(0.62 0.13 70);
+  --success: oklch(0.78 0.14 160);
+  --warning: oklch(0.82 0.14 85);
 
-  --border: oklch(0.84 0.014 75);
-  --border-strong: oklch(0.72 0.016 70);
-  --input: oklch(0.92 0.014 78);
-  --ring: oklch(0.46 0.13 38);
+  --border: oklch(0.32 0.020 248);
+  --border-strong: oklch(0.46 0.022 245);
+  --input: oklch(0.30 0.022 248);
+  --ring: oklch(0.82 0.16 200);
 
-  --chart-1: oklch(0.46 0.13 38);
-  --chart-2: oklch(0.55 0.10 80);
-  --chart-3: oklch(0.45 0.10 145);
-  --chart-4: oklch(0.40 0.06 240);
-  --chart-5: oklch(0.30 0.014 60);
+  --chart-1: oklch(0.82 0.16 200);
+  --chart-2: oklch(0.74 0.14 230);
+  --chart-3: oklch(0.78 0.14 160);
+  --chart-4: oklch(0.82 0.14 85);
+  --chart-5: oklch(0.62 0.020 235);
 
-  --radius: 0.25rem;
+  --radius: 0.125rem;
 
-  --sidebar: oklch(0.94 0.014 82);
-  --sidebar-foreground: oklch(0.18 0.012 60);
-  --sidebar-primary: oklch(0.46 0.13 38);
-  --sidebar-primary-foreground: oklch(0.97 0.012 85);
-  --sidebar-accent: oklch(0.91 0.012 80);
-  --sidebar-accent-foreground: oklch(0.18 0.012 60);
-  --sidebar-border: oklch(0.84 0.014 75);
-  --sidebar-ring: oklch(0.46 0.13 38);
+  --sidebar: oklch(0.18 0.020 250);
+  --sidebar-foreground: oklch(0.96 0.008 230);
+  --sidebar-primary: oklch(0.82 0.16 200);
+  --sidebar-primary-foreground: oklch(0.16 0.018 250);
+  --sidebar-accent: oklch(0.28 0.022 248);
+  --sidebar-accent-foreground: oklch(0.96 0.008 230);
+  --sidebar-border: oklch(0.32 0.020 248);
+  --sidebar-ring: oklch(0.82 0.16 200);
 }
 
 @theme inline {
   --font-sans: var(--font-sans-display), 'Manrope', ui-sans-serif, system-ui;
-  --font-display: var(--font-serif-editorial), 'Lora', ui-serif, Georgia;
-  --font-serif: var(--font-serif-editorial), 'Lora', ui-serif, Georgia;
+  --font-display: var(--font-display-tech), 'Space Grotesk', ui-sans-serif, system-ui;
+  --font-serif: var(--font-display-tech), 'Space Grotesk', ui-sans-serif, system-ui;
   --font-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular;
 
   --color-background: var(--background);
@@ -123,37 +123,36 @@
   }
   html {
     background-color: var(--background);
-    color-scheme: light;
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: 'ss01', 'kern';
+    font-feature-settings: 'ss01', 'ss02', 'cv11', 'kern';
   }
 
-  /* Hairlines feel like printed rules */
+  /* Hairlines */
   hr { border-color: var(--border); }
 
-  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--background); }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.78 0.014 70);
+    background: var(--border-strong);
     border-radius: 0;
-    border: 4px solid var(--background);
+    border: 3px solid var(--background);
   }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(0.62 0.016 65); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary-soft); }
 
   ::selection {
-    background: oklch(0.46 0.13 38 / 0.18);
+    background: oklch(0.82 0.16 200 / 0.30);
     color: var(--foreground);
   }
 
-  /* Smooth, paper-like text */
   h1, h2, h3, h4 {
-    font-feature-settings: 'kern', 'liga', 'dlig';
+    font-feature-settings: 'kern', 'liga', 'ss01';
   }
 }
 
-/* Quiet animations only */
+/* Quiet animations */
 @keyframes nb-fade-up {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -170,6 +169,14 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+@keyframes nb-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.25; }
+}
+@keyframes nb-scanline {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100vh); }
+}
 
 .nb-fade-up {
   animation: nb-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -179,6 +186,9 @@
 }
 .nb-marquee {
   animation: nb-marquee 60s linear infinite;
+}
+.nb-blink {
+  animation: nb-blink 1.1s steps(1) infinite;
 }
 
 .nb-reveal {
@@ -194,33 +204,33 @@
   transform: translateY(0);
 }
 
-/* Editorial mono label (eyebrow) — small caps replacement */
+/* Mono eyebrow — system label */
 .nb-eyebrow {
-  font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-size: 0.70rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted-foreground);
   font-weight: 500;
 }
 
-/* Section number marker, like in a magazine table of contents */
+/* Folio — section coordinate */
 .nb-folio {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-size: 0.70rem;
+  letter-spacing: 0.10em;
   color: var(--muted-foreground);
 }
 
-/* Pull-quote */
+/* Display pull-quote, geometric not italic-serif */
 .nb-pullquote {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 400;
-  line-height: 1.15;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
 }
 
-/* Underline link, ink-style */
+/* Underline link, signal-style */
 .nb-link {
   position: relative;
   display: inline;
@@ -234,18 +244,88 @@
   background-size: 0% 1px;
 }
 
-/* Paper texture, very subtle */
-.nb-paper::after {
+/* Subtle grid backdrop, replaces paper texture */
+.nb-grid {
+  position: relative;
+}
+.nb-grid::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.04;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.55;
+  background-image:
+    linear-gradient(to right, oklch(0.32 0.020 248 / 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.32 0.020 248 / 0.45) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at center, black 0%, black 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, black 55%, transparent 100%);
+}
+
+/* Faint horizontal noise band — tech feel without scanline kitsch */
+.nb-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Soft mesh, very subtle radial accents on dark surface */
+.nb-mesh-soft {
+  background-image:
+    radial-gradient(60% 50% at 18% 15%, oklch(0.82 0.16 200 / 0.10), transparent 70%),
+    radial-gradient(50% 45% at 85% 75%, oklch(0.74 0.14 230 / 0.10), transparent 70%);
+}
+
+/* Fine grid, denser than nb-grid, no fade mask */
+.nb-grid-fine {
+  background-image:
+    linear-gradient(to right, oklch(0.32 0.020 248 / 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.32 0.020 248 / 0.45) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glitch — quiet RGB-shift styled for cyan accent */
+.nb-glitch {
+  position: relative;
+  display: inline-block;
+  color: var(--foreground);
+}
+.nb-glitch::before,
+.nb-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.nb-glitch::before {
+  color: var(--primary);
+  transform: translate(2px, 0);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+.nb-glitch::after {
+  color: oklch(0.74 0.14 230);
+  transform: translate(-2px, 0);
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+
+/* Status dot */
+.nb-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px oklch(0.82 0.16 200 / 0.18);
+  display: inline-block;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nb-marquee { animation: none !important; }
+  .nb-marquee,
+  .nb-blink { animation: none !important; }
   .nb-reveal { transition: none; }
 }
