@@ -55,12 +55,6 @@ const STEPS: Step[] = [
   { id: "06", label: "Сроки и формат", hint: "Когда и в каком виде" },
 ]
 
-const VOICE_LANGUAGES = [
-  { code: "ru-RU", label: "RU" },
-  { code: "kk-KZ", label: "KZ" },
-  { code: "en-US", label: "EN" },
-]
-
 const INITIAL_MESSAGES: UIMessage[] = [
   {
     id: "start",
@@ -89,8 +83,8 @@ export function ChatInterface() {
     messages: INITIAL_MESSAGES,
   })
   const [input, setInput] = useState("")
-  const [voiceLanguage, setVoiceLanguage] = useState("ru-RU")
   const [isRecording, setIsRecording] = useState(false)
+  const [voicePreview, setVoicePreview] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const isStreaming = status === "submitted" || status === "streaming"
@@ -160,7 +154,8 @@ export function ChatInterface() {
 
     const recognition = new SpeechRecognitionApi()
     recognitionRef.current = recognition
-    recognition.lang = voiceLanguage
+    const browserLanguage = navigator.language
+    recognition.lang = /^(ru|kk|en)/i.test(browserLanguage) ? browserLanguage : "ru-RU"
     recognition.continuous = false
     recognition.interimResults = true
 
@@ -171,7 +166,10 @@ export function ChatInterface() {
         .join(" ")
         .trim()
 
-      if (transcript) setInput(transcript)
+      if (transcript) {
+        setVoicePreview(transcript)
+        setInput(transcript)
+      }
     }
 
     recognition.onerror = () => {
@@ -187,8 +185,9 @@ export function ChatInterface() {
 
     recognition.start()
     setIsRecording(true)
+    setVoicePreview("")
     toast("Слушаю голос", {
-      description: "Говорите на русском, казахском или английском.",
+      description: "Говорите на русском, казахском или английском. Текст появится ниже.",
     })
   }
 
@@ -366,7 +365,14 @@ export function ChatInterface() {
             >
               <label className="block">
                 <span className="nb-eyebrow">Ваш ответ</span>
-                <div className="mt-3 flex items-end gap-3 border-b border-foreground py-2">
+                <div
+                  className={cn(
+                    "mt-3 flex items-end gap-3 rounded-2xl border px-4 py-3 transition-all duration-300",
+                    isRecording
+                      ? "border-primary/70 bg-primary/[0.06] shadow-[0_0_40px_rgba(0,229,255,0.08)]"
+                      : "border-border bg-surface/30",
+                  )}
+                >
                   <input
                     type="text"
                     value={input}
@@ -376,29 +382,25 @@ export function ChatInterface() {
                     aria-label="Ваше сообщение"
                     disabled={isStreaming}
                   />
-                  <select
-                    value={voiceLanguage}
-                    onChange={(e) => setVoiceLanguage(e.target.value)}
-                    disabled={isStreaming || isRecording}
-                    aria-label="Язык голосового ввода"
-                    className="bg-transparent text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest outline-none disabled:opacity-40"
-                  >
-                    {VOICE_LANGUAGES.map((language) => (
-                      <option key={language.code} value={language.code}>
-                        {language.label}
-                      </option>
-                    ))}
-                  </select>
                   <button
                     type="button"
                     onClick={handleVoiceInput}
                     disabled={isStreaming}
                     className={cn(
-                      "text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest disabled:opacity-40",
-                      isRecording && "text-primary",
+                      "relative grid size-11 shrink-0 place-items-center rounded-full border font-mono text-[11px] uppercase tracking-widest transition-all duration-300 disabled:opacity-40",
+                      isRecording
+                        ? "border-primary bg-primary text-primary-foreground shadow-[0_0_24px_rgba(0,229,255,0.35)]"
+                        : "border-border-strong bg-background text-muted-foreground hover:border-primary hover:text-primary",
                     )}
+                    aria-label={isRecording ? "Остановить запись голоса" : "Начать голосовой ввод"}
                   >
-                    {isRecording ? "Стоп" : "Голос"}
+                    {isRecording && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-[-6px] rounded-full border border-primary/40 animate-ping"
+                      />
+                    )}
+                    <span aria-hidden>{isRecording ? "■" : "●"}</span>
                   </button>
                   <button
                     type="submit"
@@ -409,9 +411,14 @@ export function ChatInterface() {
                   </button>
                 </div>
               </label>
-              <p className="mt-3 font-mono text-[11px] text-muted-foreground tracking-wide">
-                Enter — отправить
-              </p>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] text-muted-foreground tracking-wide">
+                <p>{isRecording ? "Идёт запись · говорите свободно" : "Enter — отправить · голос распознаётся автоматически"}</p>
+                {voicePreview && (
+                  <p className="max-w-full truncate rounded-full border border-primary/25 bg-primary/[0.06] px-3 py-1 text-primary">
+                    Распознано: {voicePreview}
+                  </p>
+                )}
+              </div>
             </form>
           </section>
         </div>
