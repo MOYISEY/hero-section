@@ -87,6 +87,9 @@ export function ChatInterface() {
   const [voicePreview, setVoicePreview] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const inputRef = useRef("")
+  const shouldKeepRecordingRef = useRef(false)
+  const voiceBaseTextRef = useRef("")
   const isStreaming = status === "submitted" || status === "streaming"
   const userMessagesCount = messages.filter((message) => message.role === "user").length
   const stepIndex = Math.min(userMessagesCount, STEPS.length - 1)
@@ -98,6 +101,10 @@ export function ChatInterface() {
     if (!el) return
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
   }, [messages, isStreaming])
+
+  useEffect(() => {
+    inputRef.current = input
+  }, [input])
 
   useEffect(() => {
     const savedMessages = messages
@@ -146,44 +153,64 @@ export function ChatInterface() {
       return
     }
 
+    const SpeechRecognitionCtor = SpeechRecognitionApi
+
+    function startRecognition() {
+      const recognition = new SpeechRecognitionCtor()
+      recognitionRef.current = recognition
+      const browserLanguage = navigator.language
+      recognition.lang = /^(ru|kk|en)/i.test(browserLanguage) ? browserLanguage : "ru-RU"
+      recognition.continuous = true
+      recognition.interimResults = true
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from({ length: event.results.length }, (_, index) =>
+          event.results[index][0].transcript,
+        )
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim()
+
+        if (transcript) {
+          const nextText = [voiceBaseTextRef.current, transcript].filter(Boolean).join(" ")
+          setVoicePreview(transcript)
+          setInput(nextText)
+          inputRef.current = nextText
+        }
+      }
+
+      recognition.onerror = () => {
+        setIsRecording(false)
+        shouldKeepRecordingRef.current = false
+        toast("Не удалось распознать голос", {
+          description: "Проверьте микрофон, разрешения браузера и попробуйте ещё раз.",
+        })
+      }
+
+      recognition.onend = () => {
+        if (shouldKeepRecordingRef.current) {
+          voiceBaseTextRef.current = inputRef.current.trim()
+          startRecognition()
+          return
+        }
+
+        setIsRecording(false)
+      }
+
+      recognition.start()
+    }
+
     if (isRecording) {
+      shouldKeepRecordingRef.current = false
+      voiceBaseTextRef.current = inputRef.current.trim()
       recognitionRef.current?.stop()
       setIsRecording(false)
       return
     }
 
-    const recognition = new SpeechRecognitionApi()
-    recognitionRef.current = recognition
-    const browserLanguage = navigator.language
-    recognition.lang = /^(ru|kk|en)/i.test(browserLanguage) ? browserLanguage : "ru-RU"
-    recognition.continuous = false
-    recognition.interimResults = true
-
-    recognition.onresult = (event) => {
-      const transcript = Array.from({ length: event.results.length }, (_, index) =>
-        event.results[index][0].transcript,
-      )
-        .join(" ")
-        .trim()
-
-      if (transcript) {
-        setVoicePreview(transcript)
-        setInput(transcript)
-      }
-    }
-
-    recognition.onerror = () => {
-      setIsRecording(false)
-      toast("Не удалось распознать голос", {
-        description: "Проверьте микрофон, разрешения браузера и попробуйте ещё раз.",
-      })
-    }
-
-    recognition.onend = () => {
-      setIsRecording(false)
-    }
-
-    recognition.start()
+    shouldKeepRecordingRef.current = true
+    voiceBaseTextRef.current = inputRef.current.trim()
+    startRecognition()
     setIsRecording(true)
     setVoicePreview("")
     toast("Слушаю голос", {
