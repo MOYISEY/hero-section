@@ -7,6 +7,39 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useEffect, useRef, useState, type FormEvent } from "react"
 
+type SpeechRecognitionConstructor = new () => SpeechRecognition
+
+type SpeechRecognitionAlternative = {
+  transcript: string
+}
+
+type SpeechRecognitionResult = {
+  0: SpeechRecognitionAlternative
+}
+
+type SpeechRecognitionEvent = Event & {
+  results: {
+    length: number
+    [index: number]: SpeechRecognitionResult
+  }
+}
+
+type SpeechRecognition = EventTarget & {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  onend: (() => void) | null
+  onerror: ((event: Event) => void) | null
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type WindowWithSpeechRecognition = Window & {
+  SpeechRecognition?: SpeechRecognitionConstructor
+  webkitSpeechRecognition?: SpeechRecognitionConstructor
+}
+
 type Step = {
   id: string
   label: string
@@ -20,6 +53,12 @@ const STEPS: Step[] = [
   { id: "04", label: "Функциональность", hint: "Что должен уметь сайт" },
   { id: "05", label: "Дизайн", hint: "Тон и характер" },
   { id: "06", label: "Сроки и формат", hint: "Когда и в каком виде" },
+]
+
+const VOICE_LANGUAGES = [
+  { code: "ru-RU", label: "RU" },
+  { code: "kk-KZ", label: "KZ" },
+  { code: "en-US", label: "EN" },
 ]
 
 const INITIAL_MESSAGES: UIMessage[] = [
@@ -50,7 +89,10 @@ export function ChatInterface() {
     messages: INITIAL_MESSAGES,
   })
   const [input, setInput] = useState("")
+  const [voiceLanguage, setVoiceLanguage] = useState("ru-RU")
+  const [isRecording, setIsRecording] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
   const isStreaming = status === "submitted" || status === "streaming"
   const userMessagesCount = messages.filter((message) => message.role === "user").length
   const stepIndex = Math.min(userMessagesCount, STEPS.length - 1)
@@ -72,6 +114,14 @@ export function ChatInterface() {
       .filter((message) => message.text)
     localStorage.setItem("neuralbrief.chat", JSON.stringify(savedMessages))
     localStorage.setItem("neuralbrief.updatedAt", new Date().toISOString())
+
+    if (savedMessages.some((message) => message.role === "user")) {
+      fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: savedMessages }),
+      }).catch(() => undefined)
+    }
   }, [messages])
 
   function handleSend(e?: FormEvent) {
@@ -88,6 +138,58 @@ export function ChatInterface() {
 
     sendMessage({ text: value })
     setInput("")
+  }
+
+  function handleVoiceInput() {
+    const SpeechRecognitionApi =
+      (window as WindowWithSpeechRecognition).SpeechRecognition ||
+      (window as WindowWithSpeechRecognition).webkitSpeechRecognition
+
+    if (!SpeechRecognitionApi) {
+      toast("Голосовой ввод недоступен", {
+        description: "Откройте сайт в Chrome или Edge и разрешите доступ к микрофону.",
+      })
+      return
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop()
+      setIsRecording(false)
+      return
+    }
+
+    const recognition = new SpeechRecognitionApi()
+    recognitionRef.current = recognition
+    recognition.lang = voiceLanguage
+    recognition.continuous = false
+    recognition.interimResults = true
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from({ length: event.results.length }, (_, index) =>
+        event.results[index][0].transcript,
+      )
+        .join(" ")
+        .trim()
+
+      if (transcript) setInput(transcript)
+    }
+
+    recognition.onerror = () => {
+      setIsRecording(false)
+      toast("Не удалось распознать голос", {
+        description: "Проверьте микрофон, разрешения браузера и попробуйте ещё раз.",
+      })
+    }
+
+    recognition.onend = () => {
+      setIsRecording(false)
+    }
+
+    recognition.start()
+    setIsRecording(true)
+    toast("Слушаю голос", {
+      description: "Говорите на русском, казахском или английском.",
+    })
   }
 
   return (
@@ -274,17 +376,29 @@ export function ChatInterface() {
                     aria-label="Ваше сообщение"
                     disabled={isStreaming}
                   />
+                  <select
+                    value={voiceLanguage}
+                    onChange={(e) => setVoiceLanguage(e.target.value)}
+                    disabled={isStreaming || isRecording}
+                    aria-label="Язык голосового ввода"
+                    className="bg-transparent text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest outline-none disabled:opacity-40"
+                  >
+                    {VOICE_LANGUAGES.map((language) => (
+                      <option key={language.code} value={language.code}>
+                        {language.label}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
-                    onClick={() =>
-                      toast("Голосовой ввод", {
-                        description:
-                          "Сейчас доступен текстовый режим. Голосовой ввод подключим отдельно.",
-                      })
-                    }
-                    className="text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest"
+                    onClick={handleVoiceInput}
+                    disabled={isStreaming}
+                    className={cn(
+                      "text-muted-foreground hover:text-foreground transition-colors text-[12px] font-mono uppercase tracking-widest disabled:opacity-40",
+                      isRecording && "text-primary",
+                    )}
                   >
-                    Голос
+                    {isRecording ? "Стоп" : "Голос"}
                   </button>
                   <button
                     type="submit"
