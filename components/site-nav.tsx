@@ -50,7 +50,7 @@ export function SiteNav() {
         scrolled ? "bg-background/95 border-border" : "bg-background border-border/60",
       )}
     >
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 h-14 flex items-center justify-between gap-8">
+      <div className="mx-auto max-w-[1320px] px-5 lg:px-8 h-14 flex items-center justify-between gap-5">
         <Link
           href="/"
           className="flex items-center gap-3 shrink-0"
@@ -67,7 +67,7 @@ export function SiteNav() {
         </Link>
 
         <nav
-          className="hidden md:flex items-center gap-7"
+          className="hidden md:flex min-w-0 flex-1 items-center justify-center gap-4 lg:gap-5"
           aria-label="Основная навигация"
         >
           {navItems.map((item) => {
@@ -77,7 +77,7 @@ export function SiteNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group relative inline-flex items-baseline gap-2 text-[14px] transition-colors duration-300",
+                  "group relative inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] transition-colors duration-300 lg:text-[13px]",
                   active
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -101,12 +101,12 @@ export function SiteNav() {
           })}
         </nav>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden shrink-0 md:flex items-center gap-2.5">
           <AuthStatus />
           <ThemeToggle />
           <Link
             href="/chat"
-            className="inline-flex items-center gap-2 text-[14px] font-medium text-foreground"
+            className="inline-flex items-center gap-2 whitespace-nowrap text-[12px] font-medium text-foreground lg:text-[13px]"
           >
             <span className="nb-link">Начать диалог</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>

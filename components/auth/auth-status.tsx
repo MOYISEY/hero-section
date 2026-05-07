@@ -8,6 +8,7 @@ const labels: Record<string, string> = {
   client: "Client",
   manager: "Manager",
   developer: "Developer",
+  director: "Director",
 }
 
 export function AuthStatus() {
@@ -31,7 +32,7 @@ export function AuthStatus() {
 
   if (!role) {
     return (
-      <Link href="/login" className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground">
+      <Link href="/login" className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
         Войти
       </Link>
     )
@@ -41,7 +42,7 @@ export function AuthStatus() {
     <button
       type="button"
       onClick={logout}
-      className="rounded-full border border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+      className="whitespace-nowrap rounded-full border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive lg:text-[10px]"
     >
       {labels[role] || role} · выйти
     </button>
