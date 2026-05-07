@@ -12,8 +12,8 @@ const NAV = [
   { href: "/", label: "Главная", num: "01" },
   { href: "/chat", label: "Диалог", num: "02" },
   { href: "/brief", label: "Образец ТЗ", num: "03" },
-  { href: "/manager", label: "Менеджер", num: "04" },
-  { href: "/developer", label: "Разработчик", num: "05" },
+  { href: "/manager", label: "Менеджер", num: "04", role: "manager" },
+  { href: "/developer", label: "Разработчик", num: "05", role: "developer" },
   { href: "/about", label: "О системе", num: "06" },
 ] as const
 
@@ -21,6 +21,7 @@ export function SiteNav() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [role, setRole] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -32,6 +33,15 @@ export function SiteNav() {
   useEffect(() => {
     setOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((response) => response.json())
+      .then((data) => setRole(data.role))
+      .catch(() => undefined)
+  }, [pathname])
+
+  const navItems = NAV.filter((item) => !("role" in item) || item.role === role)
 
   return (
     <header
@@ -60,7 +70,7 @@ export function SiteNav() {
           className="hidden md:flex items-center gap-7"
           aria-label="Основная навигация"
         >
-          {NAV.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href
             return (
               <Link
@@ -125,7 +135,7 @@ export function SiteNav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-6 py-4 flex flex-col">
-            {NAV.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
