@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Menu, X } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AuthStatus } from "@/components/auth/auth-status"
 
 const NAV = [
   { href: "/", label: "Главная", num: "01" },
@@ -91,6 +92,7 @@ export function SiteNav() {
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
+          <AuthStatus />
           <ThemeToggle />
           <Link
             href="/chat"
@@ -140,6 +142,9 @@ export function SiteNav() {
             ))}
             <div className="mt-4">
               <ThemeToggle />
+            </div>
+            <div className="mt-4">
+              <AuthStatus />
             </div>
             <Link
               href="/chat"
