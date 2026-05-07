@@ -1,10 +1,11 @@
 import { getPool } from "@/lib/db"
+import { cookies } from "next/headers"
 
 const emptyData = {
   chats: [],
   developers: [],
   tasks: [],
-  events: [],
+  notifications: [],
   wiki: [],
 }
 
@@ -16,6 +17,10 @@ export async function GET() {
   }
 
   try {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get("neuralbrief.userId")?.value || null
+    const role = cookieStore.get("neuralbrief.role")?.value || null
+
     const [sessionsResult, developersResult, tasksResult, notificationsResult, wikiResult] = await Promise.all([
       pool.query(`
         SELECT
@@ -31,6 +36,7 @@ export async function GET() {
           ORDER BY created_at ASC
           LIMIT 1
         ) cm ON true
+        WHERE cs.brief_text IS NOT NULL
         ORDER BY cs.created_at DESC
         LIMIT 6
       `),
@@ -69,11 +75,12 @@ export async function GET() {
         LIMIT 8
       `),
       pool.query(`
-        SELECT title
+        SELECT id, title, body, created_at
         FROM notifications
+        WHERE ($1::UUID IS NULL OR user_id = $1::UUID)
         ORDER BY created_at DESC
         LIMIT 6
-      `),
+      `, [userId]),
       pool.query(`
         SELECT title
         FROM wiki_pages
@@ -84,10 +91,11 @@ export async function GET() {
 
     return Response.json({
       source: "database",
-      chats: sessionsResult.rows,
+      chats: role === "manager" ? sessionsResult.rows : [],
       developers: developersResult.rows,
       tasks: tasksResult.rows,
-      events: notificationsResult.rows.map((row) => row.title),
+      notifications: notificationsResult.rows,
+      events: notificationsResult.rows.map((row) => ({ id: row.id, title: row.title, body: row.body })),
       wiki: wikiResult.rows.map((row) => row.title),
     })
   } catch (error) {

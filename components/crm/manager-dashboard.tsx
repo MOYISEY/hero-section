@@ -16,18 +16,25 @@ type Developer = {
   load: string
 }
 
+type Notification = {
+  id: string
+  title: string
+  body: string | null
+}
+
 type CrmData = {
   chats: Chat[]
   developers: Developer[]
+  notifications: Notification[]
 }
 
 export function ManagerDashboard() {
-  const [data, setData] = useState<CrmData>({ chats: [], developers: [] })
+  const [data, setData] = useState<CrmData>({ chats: [], developers: [], notifications: [] })
 
   useEffect(() => {
     fetch("/api/crm")
       .then((response) => response.json())
-      .then((nextData) => setData({ chats: nextData.chats, developers: nextData.developers }))
+      .then((nextData) => setData({ chats: nextData.chats, developers: nextData.developers, notifications: nextData.notifications }))
       .catch(() => undefined)
   }, [])
 
@@ -66,6 +73,25 @@ export function ManagerDashboard() {
       </div>
 
       <aside className="space-y-6">
+        <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
+          <p className="nb-eyebrow">notifications</p>
+          <h2 className="mt-2 font-display text-2xl">Уведомления</h2>
+          <div className="mt-5 space-y-4">
+            {data.notifications.length ? (
+              data.notifications.map((notification) => (
+                <div key={notification.id} className="rounded-2xl border border-border bg-background-alt p-4">
+                  <p className="font-display text-lg">{notification.title}</p>
+                  {notification.body && <p className="mt-2 text-sm leading-6 text-muted-foreground">{notification.body}</p>}
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">
+                Уведомлений пока нет.
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
           <p className="nb-eyebrow">team resources</p>
           <h2 className="mt-2 font-display text-2xl">Разработчики</h2>

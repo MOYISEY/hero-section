@@ -54,8 +54,8 @@ export async function PATCH(req: Request) {
     return Response.json({ error: "Name is required" }, { status: 400 })
   }
 
-  if (avatarUrl && !/^https?:\/\//.test(avatarUrl)) {
-    return Response.json({ error: "Avatar URL must start with http:// or https://" }, { status: 400 })
+  if (avatarUrl && !/^https?:\/\//.test(avatarUrl) && !/^data:image\/(png|jpeg|jpg|webp|gif);base64,/.test(avatarUrl)) {
+    return Response.json({ error: "Avatar must be a valid image URL or uploaded image" }, { status: 400 })
   }
 
   const result = await pool.query(

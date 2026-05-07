@@ -66,6 +66,30 @@ export function ProfileForm() {
     toast.success("Профиль обновлён")
   }
 
+  function uploadAvatar(file: File | undefined) {
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Выберите изображение")
+      return
+    }
+
+    if (file.size > 1024 * 1024) {
+      toast.error("Фото слишком большое", {
+        description: "Загрузите изображение до 1 MB.",
+      })
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrl(reader.result)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" })
     router.push("/login")
@@ -118,6 +142,10 @@ export function ProfileForm() {
           <label className="grid gap-2">
             <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Фото профиля URL</span>
             <input value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} className="rounded-2xl border border-border bg-background-alt px-4 py-3 outline-none transition-colors focus:border-primary" placeholder="https://example.com/avatar.jpg" />
+          </label>
+          <label className="grid gap-2">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Загрузить фото</span>
+            <input type="file" accept="image/*" onChange={(event) => uploadAvatar(event.target.files?.[0])} className="rounded-2xl border border-border bg-background-alt px-4 py-3 text-sm text-muted-foreground outline-none transition-colors file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:font-mono file:text-[11px] file:uppercase file:tracking-[0.14em] file:text-primary-foreground focus:border-primary" />
           </label>
           <button type="submit" className="rounded-full bg-primary px-5 py-3 font-mono text-xs uppercase tracking-[0.16em] text-primary-foreground disabled:opacity-60" disabled={saving}>
             {saving ? "Сохранение..." : "Сохранить профиль"}

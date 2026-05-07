@@ -9,9 +9,15 @@ type Task = {
   repo: string
 }
 
+type Event = {
+  id: string
+  title: string
+  body: string | null
+}
+
 type CrmData = {
   tasks: Task[]
-  events: string[]
+  events: Event[]
   wiki: string[]
 }
 
@@ -80,8 +86,9 @@ export function DeveloperWorkspace() {
           <div className="mt-5 space-y-3">
             {data.events.length ? (
               data.events.map((event) => (
-                <div key={event} className="rounded-2xl border border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">
-                  {event}
+                <div key={event.id} className="rounded-2xl border border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">
+                  <p className="text-foreground">{event.title}</p>
+                  {event.body && <p className="mt-1">{event.body}</p>}
                 </div>
               ))
             ) : (
