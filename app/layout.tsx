@@ -4,7 +4,6 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { SiteNav } from "@/components/site-nav"
 import { SiteFooter } from "@/components/site-footer"
-import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const manrope = Manrope({
@@ -67,22 +66,20 @@ export default function RootLayout({
       className={`bg-background ${manrope.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <SiteNav />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground)",
-              },
-            }}
-          />
-          {process.env.NODE_ENV === "production" && <Analytics />}
-        </ThemeProvider>
+        <SiteNav />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--foreground)",
+            },
+          }}
+        />
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )

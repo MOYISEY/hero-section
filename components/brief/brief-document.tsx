@@ -66,6 +66,7 @@ function buildBrief(messages: SavedMessage[]) {
 export function BriefDocument() {
   const [messages, setMessages] = useState<SavedMessage[]>(fallbackMessages)
   const [updatedAt, setUpdatedAt] = useState<string>("")
+  const [generatedAt, setGeneratedAt] = useState("")
 
   useEffect(() => {
     const saved = localStorage.getItem("neuralbrief.chat")
@@ -83,6 +84,7 @@ export function BriefDocument() {
     }
 
     if (savedUpdatedAt) setUpdatedAt(savedUpdatedAt)
+    setGeneratedAt(new Date().toLocaleString("ru-RU"))
   }, [])
 
   const brief = useMemo(() => buildBrief(messages), [messages])
@@ -112,7 +114,7 @@ export function BriefDocument() {
             <dl className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3 max-w-2xl">
               {[
                 { k: "ID", v: "NB-DRAFT" },
-                { k: "Дата", v: new Date().toLocaleDateString("ru-RU") },
+                { k: "Дата", v: generatedAt ? generatedAt.split(",")[0] : "—" },
                 { k: "Автор", v: "NeuralBrief AI" },
                 { k: "Источник", v: updatedAt ? "Диалог" : "Нет данных" },
               ].map((m) => (
@@ -194,7 +196,7 @@ export function BriefDocument() {
               </div>
               <div className="font-mono text-xs text-muted-foreground space-y-1.5">
                 <p>Хэш документа: локальный черновик</p>
-                <p>Сгенерировано: {new Date().toLocaleString("ru-RU")}</p>
+                <p>Сгенерировано: {generatedAt || "—"}</p>
                 <p>Источник: сохранённый диалог браузера</p>
               </div>
             </div>
