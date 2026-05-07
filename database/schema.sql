@@ -41,11 +41,14 @@ CREATE TABLE IF NOT EXISTS projects (
   chat_session_id UUID REFERENCES chat_sessions(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   brief_text TEXT,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'approved', 'in_development', 'review', 'done')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'approved', 'in_development', 'review', 'done', 'rejected')),
   repository_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
+ALTER TABLE projects ADD CONSTRAINT projects_status_check CHECK (status IN ('draft', 'approved', 'in_development', 'review', 'done', 'rejected'));
 
 CREATE TABLE IF NOT EXISTS tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

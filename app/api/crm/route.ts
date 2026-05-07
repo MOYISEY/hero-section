@@ -2,7 +2,7 @@ import { getPool } from "@/lib/db"
 import { cookies } from "next/headers"
 
 const emptyData = {
-  chats: [],
+  requests: [],
   developers: [],
   tasks: [],
   notifications: [],
@@ -21,24 +21,21 @@ export async function GET() {
     const userId = cookieStore.get("neuralbrief.userId")?.value || null
     const role = cookieStore.get("neuralbrief.role")?.value || null
 
-    const [sessionsResult, developersResult, tasksResult, notificationsResult, wikiResult] = await Promise.all([
+    const [requestsResult, developersResult, tasksResult, notificationsResult, wikiResult] = await Promise.all([
       pool.query(`
         SELECT
-          cs.id,
-          COALESCE(NULLIF(SPLIT_PART(cm.content, '.', 1), ''), 'Клиент') AS client,
-          CASE WHEN cs.brief_text IS NULL THEN 'ИИ собирает данные для ТЗ' ELSE 'Финальное согласование ТЗ' END AS state,
-          CASE WHEN cs.brief_text IS NULL THEN 'stable' ELSE 'success' END AS tone
-        FROM chat_sessions cs
-        LEFT JOIN LATERAL (
-          SELECT content
-          FROM chat_messages
-          WHERE session_id = cs.id AND role = 'user'
-          ORDER BY created_at ASC
-          LIMIT 1
-        ) cm ON true
-        WHERE cs.brief_text IS NOT NULL
-        ORDER BY cs.created_at DESC
-        LIMIT 6
+          p.id,
+          p.title,
+          p.brief_text,
+          p.status,
+          p.created_at,
+          COALESCE(u.name, 'Клиент') AS client_name,
+          u.email AS client_email
+        FROM projects p
+        LEFT JOIN users u ON u.id = p.client_id
+        WHERE p.status = 'draft'
+        ORDER BY p.created_at DESC
+        LIMIT 12
       `),
       pool.query(`
         SELECT
@@ -53,15 +50,17 @@ export async function GET() {
         LEFT JOIN task_assignments ta ON ta.developer_id = u.id
         LEFT JOIN tasks t ON t.id = ta.task_id
         WHERE u.role = 'developer'
-          AND u.email NOT LIKE '%.demo@neuralbrief.local'
         GROUP BY u.id, u.name, u.specialization
         ORDER BY u.created_at ASC
         LIMIT 6
       `),
-      pool.query(`
+      role === "developer" && userId ? pool.query(`
         SELECT
-          LEFT(t.id::TEXT, 8) AS id,
+          t.id,
+          LEFT(t.id::TEXT, 8) AS short_id,
           t.title,
+          t.description,
+          t.status AS raw_status,
           CASE t.status
             WHEN 'todo' THEN 'Новая'
             WHEN 'in_progress' THEN 'В работе'
@@ -71,9 +70,11 @@ export async function GET() {
           COALESCE(t.repository_url, p.repository_url, 'Репозиторий не прикреплён') AS repo
         FROM tasks t
         JOIN projects p ON p.id = t.project_id
+        JOIN task_assignments ta ON ta.task_id = t.id
+        WHERE ta.developer_id = $1::UUID
         ORDER BY t.created_at DESC
         LIMIT 8
-      `),
+      `, [userId]) : Promise.resolve({ rows: [] }),
       pool.query(`
         SELECT id, title, body, created_at
         FROM notifications
@@ -91,7 +92,7 @@ export async function GET() {
 
     return Response.json({
       source: "database",
-      chats: role === "manager" ? sessionsResult.rows : [],
+      requests: role === "manager" ? requestsResult.rows : [],
       developers: developersResult.rows,
       tasks: tasksResult.rows,
       notifications: notificationsResult.rows,

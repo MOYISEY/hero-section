@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 type Task = {
   id: string
   title: string
   status: string
+  raw_status: string
   repo: string
 }
 
@@ -23,13 +25,42 @@ type CrmData = {
 
 export function DeveloperWorkspace() {
   const [data, setData] = useState<CrmData>({ tasks: [], events: [], wiki: [] })
+  const [loadingTask, setLoadingTask] = useState<string | null>(null)
 
-  useEffect(() => {
+  function loadData() {
     fetch("/api/crm")
       .then((response) => response.json())
       .then((nextData) => setData({ tasks: nextData.tasks, events: nextData.events, wiki: nextData.wiki }))
       .catch(() => undefined)
+  }
+
+  useEffect(() => {
+    loadData()
   }, [])
+
+  async function updateTask(taskId: string, status: "in_progress" | "review" | "done") {
+    setLoadingTask(`${taskId}:${status}`)
+
+    const response = await fetch("/api/developer/tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, status }),
+    })
+
+    const result = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      toast.error("Не удалось обновить задачу", {
+        description: result?.error || "Попробуйте ещё раз.",
+      })
+      setLoadingTask(null)
+      return
+    }
+
+    toast.success("Статус задачи обновлён")
+    setLoadingTask(null)
+    loadData()
+  }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
@@ -51,9 +82,18 @@ export function DeveloperWorkspace() {
               </div>
 
               <div className="mt-7 grid gap-4 md:grid-cols-3">
-                {['В работе', 'На проверке', 'Готово'].map((status) => (
-                  <button key={status} className="rounded-2xl border border-border bg-background-alt px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.14em] text-foreground transition-colors hover:border-primary">
-                    {status}
+                {[
+                  { label: 'В работе', value: 'in_progress' },
+                  { label: 'На проверке', value: 'review' },
+                  { label: 'Готово', value: 'done' },
+                ].map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={() => updateTask(task.id, status.value as "in_progress" | "review" | "done")}
+                    disabled={loadingTask === `${task.id}:${status.value}` || task.raw_status === status.value}
+                    className="rounded-2xl border border-border bg-background-alt px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.14em] text-foreground transition-colors hover:border-primary disabled:cursor-default disabled:border-primary/30 disabled:text-primary"
+                  >
+                    {loadingTask === `${task.id}:${status.value}` ? "..." : status.label}
                   </button>
                 ))}
               </div>
@@ -65,7 +105,7 @@ export function DeveloperWorkspace() {
                 </div>
                 <div className="rounded-2xl border border-border bg-background-alt p-4">
                   <p className="nb-eyebrow">time tracker</p>
-                  <button className="mt-3 rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">
+                  <button onClick={() => updateTask(task.id, "in_progress")} className="mt-3 rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">
                     Начать работу
                   </button>
                 </div>
