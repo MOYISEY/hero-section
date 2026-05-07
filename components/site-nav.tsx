@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Menu, X } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const NAV = [
   { href: "/", label: "Главная", num: "01" },
   { href: "/chat", label: "Диалог", num: "02" },
   { href: "/brief", label: "Образец ТЗ", num: "03" },
-  { href: "/about", label: "О системе", num: "04" },
+  { href: "/manager", label: "Менеджер", num: "04" },
+  { href: "/developer", label: "Разработчик", num: "05" },
+  { href: "/about", label: "О системе", num: "06" },
 ] as const
 
 export function SiteNav() {
@@ -88,6 +91,7 @@ export function SiteNav() {
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
+          <ThemeToggle />
           <Link
             href="/chat"
             className="inline-flex items-center gap-2 text-[14px] font-medium text-foreground"
@@ -134,6 +138,9 @@ export function SiteNav() {
                 <span className="font-display">{item.label}</span>
               </Link>
             ))}
+            <div className="mt-4">
+              <ThemeToggle />
+            </div>
             <Link
               href="/chat"
               className="mt-4 inline-flex items-center justify-between bg-primary text-primary-foreground px-5 py-3 text-[14px] font-medium"

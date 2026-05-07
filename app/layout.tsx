@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { SiteNav } from "@/components/site-nav"
 import { SiteFooter } from "@/components/site-footer"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const manrope = Manrope({
@@ -51,7 +52,7 @@ export const viewport: Viewport = {
   themeColor: "#0c1220",
   width: "device-width",
   initialScale: 1,
-  colorScheme: "dark",
+  colorScheme: "dark light",
 }
 
 export default function RootLayout({
@@ -62,23 +63,26 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
+      suppressHydrationWarning
       className={`bg-background ${manrope.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground">
-        <SiteNav />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "oklch(0.22 0.022 248)",
-              border: "1px solid oklch(0.32 0.020 248)",
-              color: "oklch(0.96 0.008 230)",
-            },
-          }}
-        />
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <SiteNav />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
+              },
+            }}
+          />
+          {process.env.NODE_ENV === "production" && <Analytics />}
+        </ThemeProvider>
       </body>
     </html>
   )
