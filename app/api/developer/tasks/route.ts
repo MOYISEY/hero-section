@@ -21,15 +21,21 @@ export async function PATCH(req: Request) {
   const body = await req.json().catch(() => null)
   const taskId = typeof body?.taskId === "string" ? body.taskId : ""
   const status = typeof body?.status === "string" && allowedStatuses.includes(body.status) ? body.status : null
+  const repositoryUrl = typeof body?.repositoryUrl === "string" ? body.repositoryUrl.trim() : null
 
-  if (!taskId || !status) {
-    return Response.json({ error: "Task id and valid status are required" }, { status: 400 })
+  if (!taskId || (!status && repositoryUrl === null)) {
+    return Response.json({ error: "Task id and status or repository URL are required" }, { status: 400 })
+  }
+
+  if (repositoryUrl && !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/.test(repositoryUrl)) {
+    return Response.json({ error: "Repository must be a valid GitHub repository URL" }, { status: 400 })
   }
 
   const result = await pool.query(
     `
       UPDATE tasks t
-      SET status = $1,
+      SET status = COALESCE($1, t.status),
+          repository_url = CASE WHEN $4::TEXT IS NULL THEN t.repository_url ELSE NULLIF($4, '') END,
           started_at = CASE WHEN $1 = 'in_progress' AND started_at IS NULL THEN NOW() ELSE started_at END,
           completed_at = CASE WHEN $1 = 'done' THEN NOW() ELSE completed_at END,
           updated_at = NOW()
@@ -37,9 +43,9 @@ export async function PATCH(req: Request) {
       WHERE t.id = ta.task_id
         AND ta.developer_id = $2
         AND t.id = $3
-      RETURNING t.id, t.title, t.status
+      RETURNING t.id, t.title, t.status, t.repository_url
     `,
-    [status, developerId, taskId],
+    [status, developerId, taskId, repositoryUrl],
   )
 
   const task = result.rows[0]

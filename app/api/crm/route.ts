@@ -1,12 +1,12 @@
-import { getPool } from "@/lib/db"
+﻿import { getPool } from "@/lib/db"
 import { cookies } from "next/headers"
 
 const emptyData = {
   requests: [],
   developers: [],
   tasks: [],
+  managerTasks: [],
   notifications: [],
-  wiki: [],
 }
 
 export async function GET() {
@@ -21,7 +21,7 @@ export async function GET() {
     const userId = cookieStore.get("neuralbrief.userId")?.value || null
     const role = cookieStore.get("neuralbrief.role")?.value || null
 
-    const [requestsResult, developersResult, tasksResult, notificationsResult, wikiResult] = await Promise.all([
+    const [requestsResult, developersResult, tasksResult, managerTasksResult, notificationsResult] = await Promise.all([
       pool.query(`
         SELECT
           p.id,
@@ -67,7 +67,7 @@ export async function GET() {
             WHEN 'review' THEN 'На проверке'
             WHEN 'done' THEN 'Готово'
           END AS status,
-          COALESCE(t.repository_url, p.repository_url, 'Репозиторий не прикреплён') AS repo
+          COALESCE(t.repository_url, p.repository_url, '') AS repo
         FROM tasks t
         JOIN projects p ON p.id = t.project_id
         JOIN task_assignments ta ON ta.task_id = t.id
@@ -75,19 +75,38 @@ export async function GET() {
         ORDER BY t.created_at DESC
         LIMIT 8
       `, [userId]) : Promise.resolve({ rows: [] }),
+      role === "manager" && userId ? pool.query(`
+        SELECT
+          t.id,
+          LEFT(t.id::TEXT, 8) AS short_id,
+          t.title,
+          t.description,
+          t.status AS raw_status,
+          CASE t.status
+            WHEN 'todo' THEN 'Новая'
+            WHEN 'in_progress' THEN 'В работе'
+            WHEN 'review' THEN 'На проверке'
+            WHEN 'done' THEN 'Готово'
+          END AS status,
+          COALESCE(t.repository_url, p.repository_url, '') AS repo,
+          u.name AS developer_name,
+          p.title AS project_title
+        FROM tasks t
+        JOIN projects p ON p.id = t.project_id
+        LEFT JOIN task_assignments ta ON ta.task_id = t.id
+        LEFT JOIN users u ON u.id = ta.developer_id
+        WHERE p.manager_id = $1::UUID
+        ORDER BY t.updated_at DESC
+        LIMIT 10
+      `, [userId]) : Promise.resolve({ rows: [] }),
       pool.query(`
         SELECT id, title, body, created_at
         FROM notifications
         WHERE ($1::UUID IS NULL OR user_id = $1::UUID)
+          AND read_at IS NULL
         ORDER BY created_at DESC
         LIMIT 6
       `, [userId]),
-      pool.query(`
-        SELECT title
-        FROM wiki_pages
-        ORDER BY updated_at DESC
-        LIMIT 6
-      `),
     ])
 
     return Response.json({
@@ -95,9 +114,9 @@ export async function GET() {
       requests: role === "manager" ? requestsResult.rows : [],
       developers: developersResult.rows,
       tasks: tasksResult.rows,
+      managerTasks: managerTasksResult.rows,
       notifications: notificationsResult.rows,
       events: notificationsResult.rows.map((row) => ({ id: row.id, title: row.title, body: row.body })),
-      wiki: wikiResult.rows.map((row) => row.title),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown CRM database error"

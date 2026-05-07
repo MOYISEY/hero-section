@@ -46,6 +46,17 @@ export async function PATCH(req: Request) {
         return Response.json({ error: "Project is not available for review" }, { status: 404 })
       }
 
+      await client.query(
+        `
+          UPDATE notifications
+          SET read_at = NOW()
+          WHERE user_id = $1
+            AND read_at IS NULL
+            AND (body LIKE '%' || $2::TEXT || '%' OR title = 'Новое ТЗ на рассмотрение')
+        `,
+        [managerId, projectId],
+      )
+
       await client.query("COMMIT")
       return Response.json({ ok: true, status: "rejected" })
     }
@@ -94,6 +105,17 @@ export async function PATCH(req: Request) {
         VALUES ($1, 'Новая задача назначена', $2, 'system')
       `,
       [developerId, `Менеджер назначил задачу по проекту: ${project.rows[0].title}`],
+    )
+
+    await client.query(
+      `
+        UPDATE notifications
+        SET read_at = NOW()
+        WHERE user_id = $1
+          AND read_at IS NULL
+          AND (body LIKE '%' || $2::TEXT || '%' OR title = 'Новое ТЗ на рассмотрение')
+      `,
+      [managerId, projectId],
     )
 
     await client.query("COMMIT")

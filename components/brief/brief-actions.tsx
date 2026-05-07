@@ -37,7 +37,7 @@ export function BriefActions({ briefText }: { briefText: string }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="print:hidden flex flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={downloadPdf}
