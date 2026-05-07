@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 const roleLabels: Record<string, string> = {
@@ -20,6 +21,7 @@ type User = {
 }
 
 export function ProfileForm() {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [name, setName] = useState("")
   const [avatarUrl, setAvatarUrl] = useState("")
@@ -64,6 +66,12 @@ export function ProfileForm() {
     toast.success("Профиль обновлён")
   }
 
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    router.push("/login")
+    router.refresh()
+  }
+
   if (loading) {
     return <div className="rounded-3xl border border-border bg-surface p-8 text-sm text-muted-foreground">Загрузка профиля...</div>
   }
@@ -89,6 +97,13 @@ export function ProfileForm() {
           <p className="mt-2 text-sm text-muted-foreground">{user.name} · {role}</p>
           {user.specialization && <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{user.specialization}</p>}
           <p className="mt-5 break-all text-xs text-muted-foreground">{user.email}</p>
+          <button
+            type="button"
+            onClick={logout}
+            className="mt-6 rounded-full border border-destructive/40 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+          >
+            Выйти из аккаунта
+          </button>
         </div>
       </aside>
 

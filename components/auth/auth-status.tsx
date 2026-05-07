@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 
 const labels: Record<string, string> = {
@@ -18,7 +18,6 @@ type User = {
 
 export function AuthStatus() {
   const pathname = usePathname()
-  const router = useRouter()
   const [role, setRole] = useState<string | null>(null)
   const [user, setUser] = useState<User | null>(null)
 
@@ -32,14 +31,6 @@ export function AuthStatus() {
       .catch(() => undefined)
   }, [pathname])
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" })
-    setRole(null)
-    setUser(null)
-    router.push("/login")
-    router.refresh()
-  }
-
   if (!role) {
     return (
       <Link href="/login" className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
@@ -49,12 +40,11 @@ export function AuthStatus() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={logout}
+    <Link
+      href="/profile"
       className="whitespace-nowrap rounded-full border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive lg:text-[10px]"
     >
       {user?.name || labels[role] || role} · {labels[role] || role}
-    </button>
+    </Link>
   )
 }
