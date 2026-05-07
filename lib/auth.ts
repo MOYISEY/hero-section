@@ -4,9 +4,9 @@ const iterations = 120000
 const keyLength = 64
 const digest = "sha512"
 
-export type Role = "client" | "manager" | "developer"
+export type Role = "client" | "manager" | "developer" | "director"
 
-export const roles: Role[] = ["client", "manager", "developer"]
+export const roles: Role[] = ["client", "manager", "developer", "director"]
 
 export function isRole(value: unknown): value is Role {
   return typeof value === "string" && roles.includes(value as Role)

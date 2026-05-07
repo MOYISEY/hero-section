@@ -1,25 +1,11 @@
 import { cookies } from "next/headers"
-import { isRole, verifyPassword } from "@/lib/auth"
+import { verifyPassword } from "@/lib/auth"
 import { getPool } from "@/lib/db"
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null)
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : ""
   const password = typeof body?.password === "string" ? body.password : ""
-  const demoRole = isRole(body?.role) ? body.role : null
-
-  if (!email && demoRole) {
-    const cookieStore = await cookies()
-
-    cookieStore.set("neuralbrief.role", demoRole, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    })
-
-    return Response.json({ ok: true, role: demoRole, mode: "demo" })
-  }
 
   if (!email || !password) {
     return Response.json({ error: "Email and password are required" }, { status: 400 })

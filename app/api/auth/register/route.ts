@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { hashPassword, isRole } from "@/lib/auth"
+import { hashPassword } from "@/lib/auth"
 import { getPool } from "@/lib/db"
 
 export async function POST(req: Request) {
@@ -13,10 +13,10 @@ export async function POST(req: Request) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : ""
   const name = typeof body?.name === "string" ? body.name.trim() : ""
   const password = typeof body?.password === "string" ? body.password : ""
-  const role = isRole(body?.role) ? body.role : null
+  const role = "client"
 
-  if (!email || !name || !password || !role) {
-    return Response.json({ error: "Name, email, password and role are required" }, { status: 400 })
+  if (!email || !name || !password) {
+    return Response.json({ error: "Name, email and password are required" }, { status: 400 })
   }
 
   if (password.length < 6) {

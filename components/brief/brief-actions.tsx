@@ -15,13 +15,24 @@ export function BriefActions({ briefText }: { briefText: string }) {
     window.print()
   }
 
-  function sendToDevs() {
-    const subject = encodeURIComponent("Техническое задание NeuralBrief")
-    const body = encodeURIComponent(briefText)
-    window.location.href = `mailto:?subject=${subject}&body=${body}`
+  async function sendToManager() {
+    const response = await fetch("/api/briefs/send-to-manager", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ briefText }),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      toast.error("Не удалось отправить менеджеру", {
+        description: data?.error || "Попробуйте ещё раз позже.",
+      })
+      return
+    }
+
     setSent(true)
-    toast.success("Открываю почтовый клиент", {
-      description: "Выберите получателей и отправьте письмо.",
+    toast.success("Отправлено менеджеру", {
+      description: "Менеджер получил уведомление и рассмотрит ТЗ.",
     })
   }
 
@@ -38,7 +49,7 @@ export function BriefActions({ briefText }: { briefText: string }) {
 
       <button
         type="button"
-        onClick={sendToDevs}
+        onClick={sendToManager}
         disabled={sent}
         className={cn(
           "group inline-flex items-center gap-2.5 rounded-full pl-5 pr-2 py-2 text-sm font-medium transition-all duration-500 disabled:cursor-default",
@@ -48,7 +59,7 @@ export function BriefActions({ briefText }: { briefText: string }) {
         )}
         style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
       >
-        {sent ? "Отправлено разработчикам" : "Отправить разработчикам"}
+        {sent ? "Отправлено менеджеру" : "Отправить менеджеру"}
         <span
           className={cn(
             "grid place-items-center size-7 rounded-full transition-all duration-500",
