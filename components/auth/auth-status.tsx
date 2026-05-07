@@ -5,27 +5,37 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 const labels: Record<string, string> = {
-  client: "Client",
-  manager: "Manager",
-  developer: "Developer",
-  director: "Director",
+  client: "Пользователь",
+  manager: "Менеджер",
+  developer: "Разработчик",
+  director: "Директор",
+}
+
+type User = {
+  name: string
+  role: string
 }
 
 export function AuthStatus() {
   const pathname = usePathname()
   const router = useRouter()
   const [role, setRole] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((response) => response.json())
-      .then((data) => setRole(data.role))
+      .then((data) => {
+        setRole(data.role)
+        setUser(data.user || null)
+      })
       .catch(() => undefined)
   }, [pathname])
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" })
     setRole(null)
+    setUser(null)
     router.push("/login")
     router.refresh()
   }
@@ -44,7 +54,7 @@ export function AuthStatus() {
       onClick={logout}
       className="whitespace-nowrap rounded-full border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive lg:text-[10px]"
     >
-      {labels[role] || role} · выйти
+      {user?.name || labels[role] || role} · {labels[role] || role}
     </button>
   )
 }

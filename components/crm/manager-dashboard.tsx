@@ -21,19 +21,8 @@ type CrmData = {
   developers: Developer[]
 }
 
-const fallbackData: CrmData = {
-  chats: [
-    { id: "demo-1", client: "Клиент A", state: "ИИ уточняет функции", tone: "stable" },
-    { id: "demo-2", client: "Клиент B", state: "Нужен перехват менеджера", tone: "warning" },
-  ],
-  developers: [
-    { id: "dev-1", name: "Frontend developer", stack: "React / UI", load: "Свободен" },
-    { id: "dev-2", name: "Backend developer", stack: "Node.js / PostgreSQL", load: "В работе" },
-  ],
-}
-
 export function ManagerDashboard() {
-  const [data, setData] = useState<CrmData>(fallbackData)
+  const [data, setData] = useState<CrmData>({ chats: [], developers: [] })
 
   useEffect(() => {
     fetch("/api/crm")
@@ -50,26 +39,29 @@ export function ManagerDashboard() {
             <p className="nb-eyebrow">active ai chats</p>
             <h2 className="mt-2 font-display text-2xl">Сетка активных чатов</h2>
           </div>
-          <button className="self-start rounded-full bg-primary px-5 py-3 font-mono text-xs uppercase tracking-[0.16em] text-primary-foreground md:self-auto">
-            Отправить разработчикам
-          </button>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          {data.chats.map((chat) => (
-            <article key={chat.id} className="min-h-56 rounded-2xl border border-border bg-background-alt p-5">
-              <div className="flex items-center justify-between gap-4">
-                <p className="font-display text-xl">{chat.client}</p>
-                <span className={chat.tone === "warning" ? "rounded-full border border-warning/40 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-warning" : "rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-primary"}>
-                  live
-                </span>
-              </div>
-              <p className="mt-5 text-sm leading-6 text-muted-foreground">{chat.state}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button className="rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground">Открыть</button>
-                <button className="rounded-full border border-destructive/40 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-destructive">Остановить ИИ</button>
-              </div>
-            </article>
-          ))}
+          {data.chats.length ? (
+            data.chats.map((chat) => (
+              <article key={chat.id} className="min-h-56 rounded-2xl border border-border bg-background-alt p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="font-display text-xl">{chat.client}</p>
+                  <span className={chat.tone === "warning" ? "rounded-full border border-warning/40 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-warning" : "rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-primary"}>
+                    live
+                  </span>
+                </div>
+                <p className="mt-5 text-sm leading-6 text-muted-foreground">{chat.state}</p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <button className="rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground">Открыть</button>
+                  <button className="rounded-full border border-destructive/40 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-destructive">Остановить ИИ</button>
+                </div>
+              </article>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border bg-background-alt p-6 text-sm leading-6 text-muted-foreground md:col-span-2">
+              Активных чатов пока нет. Они появятся здесь после реальных диалогов клиентов.
+            </div>
+          )}
         </div>
       </div>
 
@@ -78,13 +70,19 @@ export function ManagerDashboard() {
           <p className="nb-eyebrow">team resources</p>
           <h2 className="mt-2 font-display text-2xl">Разработчики</h2>
           <div className="mt-5 space-y-4">
-            {data.developers.map((developer) => (
-              <div key={developer.id} className="rounded-2xl border border-border bg-background-alt p-4">
-                <p className="font-display text-lg">{developer.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{developer.stack}</p>
-                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{developer.load}</p>
+            {data.developers.length ? (
+              data.developers.map((developer) => (
+                <div key={developer.id} className="rounded-2xl border border-border bg-background-alt p-4">
+                  <p className="font-display text-lg">{developer.name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{developer.stack}</p>
+                  <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{developer.load}</p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">
+                Реальные разработчики ещё не добавлены директором.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </aside>

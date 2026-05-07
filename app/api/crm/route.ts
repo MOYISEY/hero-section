@@ -1,27 +1,18 @@
 import { getPool } from "@/lib/db"
 
-const fallbackData = {
-  chats: [
-    { id: "demo-1", client: "Клиент A", state: "ИИ уточняет функции", tone: "stable" },
-    { id: "demo-2", client: "Клиент B", state: "Нужен перехват менеджера", tone: "warning" },
-    { id: "demo-3", client: "Клиент C", state: "Финальное согласование ТЗ", tone: "success" },
-  ],
-  developers: [
-    { id: "dev-1", name: "Frontend developer", stack: "React / UI", load: "Свободен" },
-    { id: "dev-2", name: "Backend developer", stack: "Node.js / PostgreSQL", load: "В работе" },
-  ],
-  tasks: [
-    { id: "NB-104", title: "Лендинг для SaaS-продукта", status: "В работе", repo: "github.com/studio/project" },
-  ],
-  events: ["Менеджер назначил задачу NB-104", "Новое сообщение в командном чате"],
-  wiki: ["Code Style", "Доступы к хостингам", "Правила деплоя"],
+const emptyData = {
+  chats: [],
+  developers: [],
+  tasks: [],
+  events: [],
+  wiki: [],
 }
 
 export async function GET() {
   const pool = getPool()
 
   if (!pool) {
-    return Response.json({ source: "fallback", ...fallbackData })
+    return Response.json({ source: "empty", ...emptyData })
   }
 
   try {
@@ -56,6 +47,7 @@ export async function GET() {
         LEFT JOIN task_assignments ta ON ta.developer_id = u.id
         LEFT JOIN tasks t ON t.id = ta.task_id
         WHERE u.role = 'developer'
+          AND u.email NOT LIKE '%.demo@neuralbrief.local'
         GROUP BY u.id, u.name, u.specialization
         ORDER BY u.created_at ASC
         LIMIT 6
@@ -92,15 +84,15 @@ export async function GET() {
 
     return Response.json({
       source: "database",
-      chats: sessionsResult.rows.length ? sessionsResult.rows : fallbackData.chats,
-      developers: developersResult.rows.length ? developersResult.rows : fallbackData.developers,
-      tasks: tasksResult.rows.length ? tasksResult.rows : fallbackData.tasks,
-      events: notificationsResult.rows.length ? notificationsResult.rows.map((row) => row.title) : fallbackData.events,
-      wiki: wikiResult.rows.length ? wikiResult.rows.map((row) => row.title) : fallbackData.wiki,
+      chats: sessionsResult.rows,
+      developers: developersResult.rows,
+      tasks: tasksResult.rows,
+      events: notificationsResult.rows.map((row) => row.title),
+      wiki: wikiResult.rows.map((row) => row.title),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown CRM database error"
 
-    return Response.json({ error: message, source: "error", ...fallbackData }, { status: 500 })
+    return Response.json({ error: message, source: "error", ...emptyData }, { status: 500 })
   }
 }

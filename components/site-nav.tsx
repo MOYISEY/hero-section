@@ -12,9 +12,10 @@ const NAV = [
   { href: "/", label: "Главная", num: "01" },
   { href: "/chat", label: "Диалог", num: "02" },
   { href: "/brief", label: "Образец ТЗ", num: "03" },
-  { href: "/manager", label: "Менеджер", num: "04", role: "manager" },
-  { href: "/developer", label: "Разработчик", num: "05", role: "developer" },
-  { href: "/about", label: "О системе", num: "06" },
+  { href: "/profile", label: "Профиль", num: "04", auth: true },
+  { href: "/manager", label: "Менеджер", num: "05", role: "manager" },
+  { href: "/developer", label: "Разработчик", num: "06", role: "developer" },
+  { href: "/about", label: "О системе", num: "07" },
 ] as const
 
 export function SiteNav() {
@@ -41,7 +42,11 @@ export function SiteNav() {
       .catch(() => undefined)
   }, [pathname])
 
-  const navItems = NAV.filter((item) => !("role" in item) || item.role === role)
+  const navItems = NAV.filter((item) => {
+    if ("auth" in item && item.auth) return Boolean(role)
+    if ("role" in item) return item.role === role
+    return true
+  })
 
   return (
     <header
