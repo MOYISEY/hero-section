@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { NotificationList } from "@/components/crm/notification-list"
+import { ProjectChatPanel } from "@/components/crm/project-chat-panel"
 
-type Task = { id: string; short_id: string; title: string; description: string | null; status: string; raw_status: string; repo: string }
-type Event = { id: string; title: string; body: string | null }
+type Task = { id: string; short_id: string; project_id: string; title: string; description: string | null; status: string; raw_status: string; repo: string; project_title: string; project_created_at: string; client_name: string; client_email: string | null }
+type Event = { id: string; title: string; body: string | null; read_at?: string | null }
 type CrmData = { tasks: Task[]; events: Event[] }
 
 export function DeveloperWorkspace() {
@@ -62,6 +64,8 @@ export function DeveloperWorkspace() {
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-primary">{task.short_id || task.id}</p>
                 <h2 className="mt-3 font-display text-3xl leading-tight">{task.title}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{task.project_title} · {task.client_name}{task.client_email ? ` · ${task.client_email}` : ""}</p>
+                <p className="mt-1 text-xs text-muted-foreground">ТЗ создано: {task.project_created_at ? new Date(task.project_created_at).toLocaleDateString("ru-RU") : "—"}</p>
               </div>
               <span className="rounded-full border border-primary/30 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{task.status}</span>
             </div>
@@ -72,7 +76,7 @@ export function DeveloperWorkspace() {
             </div>
 
             <div className="mt-7 grid gap-4 md:grid-cols-3">
-              {[{ label: "В работе", value: "in_progress" }, { label: "На проверке", value: "review" }, { label: "Готово", value: "done" }].map((status) => (
+              {[{ label: "В работе", value: "in_progress" }, { label: "Задача выполнена", value: "review" }].map((status) => (
                 <button key={status.value} onClick={() => updateTask(task.id, status.value as "in_progress" | "review" | "done")} disabled={loadingTask === `${task.id}:${status.value}` || task.raw_status === status.value} className="rounded-2xl border border-border bg-background-alt px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.14em] text-foreground transition-colors hover:border-primary disabled:cursor-default disabled:border-primary/30 disabled:text-primary">
                   {loadingTask === `${task.id}:${status.value}` ? "..." : status.label}
                 </button>
@@ -86,6 +90,8 @@ export function DeveloperWorkspace() {
                 <button onClick={() => saveRepo(task.id)} className="rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">{loadingTask === `${task.id}:repo` ? "..." : "Сохранить repo"}</button>
               </div>
             </div>
+
+            <ProjectChatPanel projectId={task.project_id} channel="manager_developer" title="Чат с менеджером" />
           </article>
         )) : <div className="rounded-3xl border border-dashed border-border bg-surface p-6 text-sm leading-6 text-muted-foreground">Назначенных задач пока нет. Они появятся здесь после решения менеджера.</div>}
       </div>
@@ -94,7 +100,7 @@ export function DeveloperWorkspace() {
         <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
           <p className="nb-eyebrow">notifications</p>
           <h2 className="mt-2 font-display text-2xl">Лента событий</h2>
-          <div className="mt-5 space-y-3">{data.events.length ? data.events.map((event) => <div key={event.id} className="rounded-2xl border border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground"><p className="text-foreground">{event.title}</p>{event.body && <p className="mt-1">{event.body}</p>}</div>) : <div className="rounded-2xl border border-dashed border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">Уведомлений пока нет.</div>}</div>
+          <NotificationList items={data.events} onChanged={loadData} />
         </div>
       </aside>
     </div>

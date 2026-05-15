@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
+import { extractRequirements, type SavedDialogMessage } from "@/lib/requirements"
 
 export async function POST(req: Request) {
   const pool = getPool()
@@ -10,6 +11,9 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null)
   const briefText = typeof body?.briefText === "string" ? body.briefText.trim() : ""
+  const messages: SavedDialogMessage[] = Array.isArray(body?.messages)
+    ? body.messages.filter((message: SavedDialogMessage) => typeof message?.role === "string" && typeof message?.text === "string")
+    : []
 
   if (!briefText) {
     return Response.json({ error: "Brief text is required" }, { status: 400 })
@@ -17,6 +21,11 @@ export async function POST(req: Request) {
 
   const cookieStore = await cookies()
   const userId = cookieStore.get("neuralbrief.userId")?.value || null
+  const role = cookieStore.get("neuralbrief.role")?.value || null
+
+  if (!userId || role !== "client") {
+    return Response.json({ error: "Войдите или зарегистрируйтесь, чтобы сохранить проект" }, { status: 401 })
+  }
 
   try {
     const managers = await pool.query(`SELECT id FROM users WHERE role = 'manager' AND status = 'active' LIMIT 10`)
@@ -27,11 +36,11 @@ export async function POST(req: Request) {
 
     const project = await pool.query(
       `
-        INSERT INTO projects (client_id, title, brief_text, status)
-        VALUES ($1, $2, $3, 'draft')
+        INSERT INTO projects (client_id, title, brief_text, requirements_json, status)
+        VALUES ($1, $2, $3, $4, 'draft')
         RETURNING id
       `,
-      [userId, "Новое ТЗ из NeuralBrief", briefText],
+      [userId, "Новое ТЗ из NeuralBrief", briefText, JSON.stringify(extractRequirements(messages))],
     )
 
     await Promise.all(

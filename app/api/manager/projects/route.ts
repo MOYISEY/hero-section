@@ -18,7 +18,7 @@ export async function PATCH(req: Request) {
 
   const body = await req.json().catch(() => null)
   const projectId = typeof body?.projectId === "string" ? body.projectId : ""
-  const action = body?.action === "reject" ? "reject" : body?.action === "approve" ? "approve" : null
+  const action = body?.action === "reject" ? "reject" : body?.action === "approve" ? "approve" : body?.action === "close_task" ? "close_task" : null
   const developerId = typeof body?.developerId === "string" ? body.developerId : ""
 
   if (!projectId || !action) {
@@ -29,6 +29,47 @@ export async function PATCH(req: Request) {
 
   try {
     await client.query("BEGIN")
+
+    if (action === "close_task") {
+      const result = await client.query(
+        `
+          UPDATE projects
+          SET status = 'done', updated_at = NOW()
+          WHERE id = $1 AND manager_id = $2 AND status = 'review'
+          RETURNING id, title, client_id
+        `,
+        [projectId, managerId],
+      )
+
+      const project = result.rows[0]
+
+      if (!project) {
+        await client.query("ROLLBACK")
+        return Response.json({ error: "Project is not ready to close" }, { status: 404 })
+      }
+
+      await client.query(
+        `
+          UPDATE tasks
+          SET status = 'done', completed_at = NOW(), updated_at = NOW()
+          WHERE project_id = $1
+        `,
+        [project.id],
+      )
+
+      if (project.client_id) {
+        await client.query(
+          `
+            INSERT INTO notifications (user_id, title, body, channel)
+            VALUES ($1, 'Проект готов', $2, 'system')
+          `,
+          [project.client_id, `Менеджер закрыл задачу по проекту: ${project.title}`],
+        )
+      }
+
+      await client.query("COMMIT")
+      return Response.json({ ok: true, status: "done" })
+    }
 
     if (action === "reject") {
       const result = await client.query(

@@ -31,41 +31,63 @@ export async function PATCH(req: Request) {
     return Response.json({ error: "Repository must be a valid GitHub repository URL" }, { status: 400 })
   }
 
-  const result = await pool.query(
-    `
-      UPDATE tasks t
-      SET status = COALESCE($1, t.status),
-          repository_url = CASE WHEN $4::TEXT IS NULL THEN t.repository_url ELSE NULLIF($4, '') END,
-          started_at = CASE WHEN $1 = 'in_progress' AND started_at IS NULL THEN NOW() ELSE started_at END,
-          completed_at = CASE WHEN $1 = 'done' THEN NOW() ELSE completed_at END,
-          updated_at = NOW()
-      FROM task_assignments ta
-      WHERE t.id = ta.task_id
-        AND ta.developer_id = $2
-        AND t.id = $3
-      RETURNING t.id, t.title, t.status, t.repository_url
-    `,
-    [status, developerId, taskId, repositoryUrl],
-  )
+  const client = await pool.connect()
 
-  const task = result.rows[0]
+  try {
+    await client.query("BEGIN")
 
-  if (!task) {
-    return Response.json({ error: "Task not found or not assigned to you" }, { status: 404 })
-  }
-
-  if (status === "review" || status === "done") {
-    await pool.query(
+    const result = await client.query(
       `
-        INSERT INTO notifications (user_id, title, body, channel)
-        SELECT p.manager_id, 'Статус задачи обновлён', $1, 'system'
-        FROM tasks t
-        JOIN projects p ON p.id = t.project_id
-        WHERE t.id = $2 AND p.manager_id IS NOT NULL
+        UPDATE tasks t
+        SET status = COALESCE($1, t.status),
+            repository_url = CASE WHEN $4::TEXT IS NULL THEN t.repository_url ELSE NULLIF($4, '') END,
+            started_at = CASE WHEN $1 = 'in_progress' AND started_at IS NULL THEN NOW() ELSE started_at END,
+            completed_at = CASE WHEN $1 = 'done' THEN NOW() ELSE completed_at END,
+            updated_at = NOW()
+        FROM task_assignments ta
+        WHERE t.id = ta.task_id
+          AND ta.developer_id = $2
+          AND t.id = $3
+        RETURNING t.id, t.title, t.status, t.repository_url, t.project_id
       `,
-      [`Разработчик обновил задачу "${task.title}" до статуса ${status}.`, task.id],
+      [status, developerId, taskId, repositoryUrl],
     )
-  }
 
-  return Response.json({ ok: true, task })
+    const task = result.rows[0]
+
+    if (!task) {
+      await client.query("ROLLBACK")
+      return Response.json({ error: "Task not found or not assigned to you" }, { status: 404 })
+    }
+
+    if (status === "review" || status === "done") {
+      await client.query(
+        `
+          UPDATE projects
+          SET status = 'review', updated_at = NOW()
+          WHERE id = $1
+        `,
+        [task.project_id],
+      )
+
+      await client.query(
+        `
+          INSERT INTO notifications (user_id, title, body, channel)
+          SELECT p.manager_id, 'Задача ожидает проверки', $1, 'system'
+          FROM projects p
+          WHERE p.id = $2 AND p.manager_id IS NOT NULL
+        `,
+        [`Разработчик отправил задачу "${task.title}" на проверку менеджером.`, task.project_id],
+      )
+    }
+
+    await client.query("COMMIT")
+    return Response.json({ ok: true, task })
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined)
+    const message = error instanceof Error ? error.message : "Unknown task update error"
+    return Response.json({ error: message }, { status: 500 })
+  } finally {
+    client.release()
+  }
 }

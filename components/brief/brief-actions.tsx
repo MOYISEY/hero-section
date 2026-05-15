@@ -2,10 +2,16 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
+import Link from "next/link"
 import { Download, Send, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function BriefActions({ briefText }: { briefText: string }) {
+type BriefMessage = {
+  role: string
+  text: string
+}
+
+export function BriefActions({ briefText, messages = [], isAuthenticated }: { briefText: string; messages?: BriefMessage[]; isAuthenticated?: boolean }) {
   const [sent, setSent] = useState(false)
 
   function downloadPdf() {
@@ -16,10 +22,15 @@ export function BriefActions({ briefText }: { briefText: string }) {
   }
 
   async function sendToManager() {
+    if (!isAuthenticated) {
+      toast.error("Войдите или зарегистрируйтесь, чтобы сохранить проект")
+      return
+    }
+
     const response = await fetch("/api/briefs/send-to-manager", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ briefText }),
+      body: JSON.stringify({ briefText, messages }),
     })
 
     if (!response.ok) {
@@ -37,7 +48,18 @@ export function BriefActions({ briefText }: { briefText: string }) {
   }
 
   return (
-    <div className="print:hidden flex flex-wrap items-center gap-3">
+    <div className="print:hidden space-y-4">
+      {!isAuthenticated && (
+        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-foreground">
+          <p className="font-display text-lg">Войдите или зарегистрируйтесь, чтобы сохранить проект</p>
+          <p className="mt-2 text-muted-foreground">Гость может просмотреть черновик, но сохранение ТЗ в базе доступно только клиенту.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/login" className="rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">Войти</Link>
+            <Link href="/login" className="rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em]">Регистрация</Link>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={downloadPdf}
@@ -70,6 +92,7 @@ export function BriefActions({ briefText }: { briefText: string }) {
           {sent ? <Check className="size-3.5" /> : <Send className="size-3.5" />}
         </span>
       </button>
+      </div>
     </div>
   )
 }

@@ -19,9 +19,9 @@ export async function POST(req: Request) {
 
   const result = await pool.query(
     `
-      SELECT id, email, name, role, password_hash
+      SELECT id, email, name, role, password_hash, is_banned
       FROM users
-      WHERE email = $1 AND status = 'active'
+      WHERE email = $1 AND status = 'active' AND deleted_at IS NULL
       LIMIT 1
     `,
     [email],
@@ -31,6 +31,10 @@ export async function POST(req: Request) {
 
   if (!user?.password_hash || !verifyPassword(password, user.password_hash)) {
     return Response.json({ error: "Invalid email or password" }, { status: 401 })
+  }
+
+  if (user.is_banned) {
+    return Response.json({ error: "Аккаунт заблокирован", banned: true }, { status: 403 })
   }
 
   const cookieStore = await cookies()

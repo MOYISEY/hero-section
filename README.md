@@ -1,5 +1,28 @@
 # hero-section
 
+## Diploma materials
+
+Дипломная структура, проверка требований и готовые формулировки для пояснительной записки находятся в `docs/diploma-plan.md`.
+
+## NeuralBrief features
+
+- LLM-диалог с клиентом и генерация черновика технического задания.
+- Структурированное извлечение требований и расчёт полноты данных.
+- Авторизация с ролями: client, manager, developer, director.
+- Сохранение ТЗ и проектов только для зарегистрированных клиентов.
+- CRM workflow: клиент → менеджер → разработчик → проверка → клиент.
+- Уведомления с прочтением, удалением и очисткой ленты.
+- Служебные чаты по каналам manager-client, manager-developer, director-user.
+- Панель директора со статистикой, пользователями, баном, soft delete и audit log.
+- Личный кабинет клиента с проектами, прогрессом, скачиванием ТЗ и оценкой результата.
+
+## Quality checks
+
+```bash
+corepack pnpm test
+corepack pnpm build
+```
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
 
 ## Built with v0

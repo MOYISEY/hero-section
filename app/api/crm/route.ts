@@ -67,11 +67,18 @@ export async function GET() {
             WHEN 'review' THEN 'На проверке'
             WHEN 'done' THEN 'Готово'
           END AS status,
-          COALESCE(t.repository_url, p.repository_url, '') AS repo
+          COALESCE(t.repository_url, p.repository_url, '') AS repo,
+          p.id AS project_id,
+          p.title AS project_title,
+          p.created_at AS project_created_at,
+          COALESCE(c.name, 'Клиент') AS client_name,
+          c.email AS client_email
         FROM tasks t
         JOIN projects p ON p.id = t.project_id
+        LEFT JOIN users c ON c.id = p.client_id
         JOIN task_assignments ta ON ta.task_id = t.id
         WHERE ta.developer_id = $1::UUID
+          AND t.status <> 'done'
         ORDER BY t.created_at DESC
         LIMIT 8
       `, [userId]) : Promise.resolve({ rows: [] }),
@@ -90,7 +97,9 @@ export async function GET() {
           END AS status,
           COALESCE(t.repository_url, p.repository_url, '') AS repo,
           u.name AS developer_name,
-          p.title AS project_title
+          p.id AS project_id,
+          p.title AS project_title,
+          p.status AS project_status
         FROM tasks t
         JOIN projects p ON p.id = t.project_id
         LEFT JOIN task_assignments ta ON ta.task_id = t.id
@@ -100,12 +109,12 @@ export async function GET() {
         LIMIT 10
       `, [userId]) : Promise.resolve({ rows: [] }),
       pool.query(`
-        SELECT id, title, body, created_at
+        SELECT id, title, body, read_at, created_at
         FROM notifications
         WHERE ($1::UUID IS NULL OR user_id = $1::UUID)
-          AND read_at IS NULL
-        ORDER BY created_at DESC
-        LIMIT 6
+          AND deleted_at IS NULL
+        ORDER BY CASE WHEN read_at IS NULL THEN 0 ELSE 1 END, created_at DESC
+        LIMIT 12
       `, [userId]),
     ])
 
@@ -116,7 +125,7 @@ export async function GET() {
       tasks: tasksResult.rows,
       managerTasks: managerTasksResult.rows,
       notifications: notificationsResult.rows,
-      events: notificationsResult.rows.map((row) => ({ id: row.id, title: row.title, body: row.body })),
+      events: notificationsResult.rows.map((row) => ({ id: row.id, title: row.title, body: row.body, read_at: row.read_at, created_at: row.created_at })),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown CRM database error"

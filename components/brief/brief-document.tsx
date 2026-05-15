@@ -2,6 +2,7 @@
 
 import { Reveal } from "@/components/reveal"
 import { BriefActions } from "@/components/brief/brief-actions"
+import { extractRequirements } from "@/lib/requirements"
 import { Compass, Target, Users, Layers, Brush, ListTree } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
@@ -17,6 +18,8 @@ const SECTIONS = [
   { id: "features", label: "Функционал", icon: Layers },
   { id: "design", label: "Дизайн", icon: Brush },
   { id: "structure", label: "Структура", icon: ListTree },
+  { id: "structured", label: "Требования", icon: ListTree },
+  { id: "transcript", label: "Диалог", icon: ListTree },
 ]
 
 function fallbackMessages(): SavedMessage[] {
@@ -44,21 +47,19 @@ function buildBrief(messages: SavedMessage[]) {
   const aiText = aiMessages.map((message) => message.text).join(". ").trim()
   const sourceText = userText || aiText
   const items = splitItems(sourceText)
+  const requirements = extractRequirements(messages)
 
   return {
-    title: userMessages[0]?.text || "Черновик ТЗ по вашему диалогу",
+    title: requirements.projectType || userMessages[0]?.text || "Черновик ТЗ по вашему диалогу",
     summary:
       sourceText ||
       "Нет сохранённых ответов пользователя. Вернитесь в диалог и опишите проект.",
-    goals: items.length ? items : ["Цели нужно уточнить в диалоге."],
-    audience:
-      userMessages[1]?.text || "Аудиторию нужно уточнить отдельным вопросом в диалоге.",
-    features:
-      userMessages[2]?.text || "Функционал нужно уточнить отдельным вопросом в диалоге.",
-    design:
-      userMessages[3]?.text || "Дизайн-предпочтения пока не указаны.",
-    structure:
-      aiMessages.at(-1)?.text || "Структура будет дополнена после уточняющих вопросов AI.",
+    goals: requirements.goal ? [requirements.goal, ...items].slice(0, 6) : items.length ? items : ["Цели нужно уточнить в диалоге."],
+    audience: requirements.audience,
+    features: requirements.features.join("; "),
+    design: requirements.design,
+    structure: requirements.pages.join("; "),
+    requirements,
     transcript: messages,
   }
 }
@@ -67,6 +68,7 @@ export function BriefDocument() {
   const [messages, setMessages] = useState<SavedMessage[]>(fallbackMessages)
   const [updatedAt, setUpdatedAt] = useState<string>("")
   const [generatedAt, setGeneratedAt] = useState("")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem("neuralbrief.chat")
@@ -85,6 +87,10 @@ export function BriefDocument() {
 
     if (savedUpdatedAt) setUpdatedAt(savedUpdatedAt)
     setGeneratedAt(new Date().toLocaleString("ru-RU"))
+    fetch("/api/auth/me")
+      .then((response) => response.json())
+      .then((data) => setIsAuthenticated(Boolean(data?.userId && data?.role === "client")))
+      .catch(() => setIsAuthenticated(false))
   }, [])
 
   const brief = useMemo(() => buildBrief(messages), [messages])
@@ -98,6 +104,8 @@ export function BriefDocument() {
         `Функционал: ${brief.features}`,
         `Дизайн: ${brief.design}`,
         `Структура: ${brief.structure}`,
+        `Полнота данных: ${brief.requirements.completeness}%`,
+        `Недостающие данные: ${brief.requirements.missingFields.length ? brief.requirements.missingFields.join(", ") : "не выявлены"}`,
       ].join("\n\n"),
     [brief],
   )
@@ -117,6 +125,7 @@ export function BriefDocument() {
                 { k: "Дата", v: generatedAt ? generatedAt.split(",")[0] : "—" },
                 { k: "Автор", v: "NeuralBrief AI" },
                 { k: "Источник", v: updatedAt ? "Диалог" : "Нет данных" },
+                { k: "Полнота", v: `${brief.requirements.completeness}%` },
               ].map((m) => (
                 <div key={m.k}>
                   <dt className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -128,7 +137,7 @@ export function BriefDocument() {
             </dl>
           </div>
 
-          <BriefActions briefText={briefText} />
+          <BriefActions briefText={briefText} messages={messages} isAuthenticated={isAuthenticated} />
         </div>
 
         <div className="grid lg:grid-cols-[220px_1fr] gap-10 lg:gap-14">
@@ -176,7 +185,33 @@ export function BriefDocument() {
               <p>{brief.structure}</p>
             </Section>
 
-            <Section id="transcript" icon={ListTree} n="07" title="Исходный диалог">
+            <Section id="structured" icon={ListTree} n="07" title="Структурированные требования">
+              <dl className="grid gap-4">
+                {[
+                  ["Тип проекта", brief.requirements.projectType],
+                  ["Цель", brief.requirements.goal],
+                  ["Аудитория", brief.requirements.audience],
+                  ["Сроки", brief.requirements.deadline],
+                  ["Интеграции", brief.requirements.integrations.length ? brief.requirements.integrations.join("; ") : "Не указаны"],
+                  ["Ограничения", brief.requirements.constraints.length ? brief.requirements.constraints.join("; ") : "Не указаны"],
+                ].map(([key, value]) => (
+                  <div key={key} className="rounded-xl border border-border/60 bg-surface/30 p-4">
+                    <dt className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{key}</dt>
+                    <dd className="mt-2 text-foreground">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-6 rounded-xl border border-border/60 bg-surface/30 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Недостающие данные</p>
+                {brief.requirements.missingFields.length ? (
+                  <BulletList items={brief.requirements.missingFields.map((field) => `Уточнить: ${field}`)} />
+                ) : (
+                  <p className="mt-2 text-foreground">Критические пропуски не выявлены.</p>
+                )}
+              </div>
+            </Section>
+
+            <Section id="transcript" icon={ListTree} n="08" title="Исходный диалог">
               <ol className="mt-5 flex flex-col gap-3">
                 {brief.transcript.map((message, index) => (
                   <li key={`${message.role}-${index}`} className="rounded-xl border border-border/60 bg-surface/30 p-4">

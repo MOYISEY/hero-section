@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { NotificationList } from "@/components/crm/notification-list"
 
 type RequestItem = { id: string; title: string; brief_text: string | null; status: string; client_name: string; client_email: string | null }
 type Developer = { id: string; name: string; stack: string; load: string }
-type Notification = { id: string; title: string; body: string | null }
-type ManagerTask = { id: string; short_id: string; title: string; description: string | null; status: string; repo: string; developer_name: string | null; project_title: string }
+type Notification = { id: string; title: string; body: string | null; read_at?: string | null }
+type ManagerTask = { id: string; short_id: string; project_id: string; title: string; description: string | null; status: string; raw_status: string; repo: string; developer_name: string | null; project_title: string; project_status: string }
 type CrmData = { requests: RequestItem[]; developers: Developer[]; notifications: Notification[]; managerTasks: ManagerTask[] }
 
 export function ManagerDashboard() {
@@ -37,6 +38,24 @@ export function ManagerDashboard() {
       return
     }
     toast.success(action === "approve" ? "Заявка отправлена разработчику" : "Заявка отклонена")
+    setLoadingAction(null)
+    loadData()
+  }
+
+  async function closeTask(projectId: string) {
+    setLoadingAction(`close:${projectId}`)
+    const response = await fetch("/api/manager/projects", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, action: "close_task" }),
+    })
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      toast.error("Не удалось закрыть задачу", { description: result?.error || "Проект ещё не готов к закрытию." })
+      setLoadingAction(null)
+      return
+    }
+    toast.success("Задача закрыта")
     setLoadingAction(null)
     loadData()
   }
@@ -78,6 +97,11 @@ export function ManagerDashboard() {
                 </div>
                 <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{task.description || "Описание отсутствует"}</p>
                 <p className="mt-4 break-words text-xs text-muted-foreground">Repo: {task.repo || "Не прикреплён"}</p>
+                {task.project_status === "review" && (
+                  <button onClick={() => closeTask(task.project_id)} className="mt-5 rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">
+                    {loadingAction === `close:${task.project_id}` ? "..." : "Закрыть задачу"}
+                  </button>
+                )}
               </article>
             )) : <div className="rounded-2xl border border-dashed border-border bg-background-alt p-6 text-sm leading-6 text-muted-foreground">Назначенных задач пока нет.</div>}
           </div>
@@ -85,7 +109,7 @@ export function ManagerDashboard() {
       </div>
 
       <aside className="space-y-6">
-        <div className="rounded-3xl border border-border bg-surface p-5 md:p-6"><p className="nb-eyebrow">notifications</p><h2 className="mt-2 font-display text-2xl">Уведомления</h2><div className="mt-5 space-y-4">{data.notifications.length ? data.notifications.map((notification) => <div key={notification.id} className="rounded-2xl border border-border bg-background-alt p-4"><p className="font-display text-lg">{notification.title}</p>{notification.body && <p className="mt-2 text-sm leading-6 text-muted-foreground">{notification.body}</p>}</div>) : <div className="rounded-2xl border border-dashed border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">Уведомлений пока нет.</div>}</div></div>
+        <div className="rounded-3xl border border-border bg-surface p-5 md:p-6"><p className="nb-eyebrow">notifications</p><h2 className="mt-2 font-display text-2xl">Уведомления</h2><NotificationList items={data.notifications} onChanged={loadData} /></div>
         <div className="rounded-3xl border border-border bg-surface p-5 md:p-6"><p className="nb-eyebrow">team resources</p><h2 className="mt-2 font-display text-2xl">Разработчики</h2><div className="mt-5 space-y-4">{data.developers.length ? data.developers.map((developer) => <div key={developer.id} className="rounded-2xl border border-border bg-background-alt p-4"><p className="font-display text-lg">{developer.name}</p><p className="mt-1 text-sm text-muted-foreground">{developer.stack}</p><p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{developer.load}</p></div>) : <div className="rounded-2xl border border-dashed border-border bg-background-alt p-4 text-sm leading-6 text-muted-foreground">Реальные разработчики ещё не добавлены директором.</div>}</div></div>
       </aside>
     </div>
