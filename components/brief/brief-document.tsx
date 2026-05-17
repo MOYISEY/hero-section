@@ -48,9 +48,12 @@ function buildBrief(messages: SavedMessage[]) {
   const sourceText = userText || aiText
   const items = splitItems(sourceText)
   const requirements = extractRequirements(messages)
+  const title = requirements.projectType && requirements.projectType !== "Тип проекта не определён"
+    ? requirements.projectType.split(/[.;\n]/)[0].trim()
+    : userMessages[0]?.text.split(/[.;\n]/)[0].trim() || "Черновик ТЗ по вашему диалогу"
 
   return {
-    title: requirements.projectType || userMessages[0]?.text || "Черновик ТЗ по вашему диалогу",
+    title: title.length > 90 ? `${title.slice(0, 90).trim()}…` : title,
     summary:
       sourceText ||
       "Нет сохранённых ответов пользователя. Вернитесь в диалог и опишите проект.",
@@ -68,7 +71,8 @@ export function BriefDocument() {
   const [messages, setMessages] = useState<SavedMessage[]>(fallbackMessages)
   const [updatedAt, setUpdatedAt] = useState<string>("")
   const [generatedAt, setGeneratedAt] = useState("")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem("neuralbrief.chat")
@@ -89,8 +93,14 @@ export function BriefDocument() {
     setGeneratedAt(new Date().toLocaleString("ru-RU"))
     fetch("/api/auth/me")
       .then((response) => response.json())
-      .then((data) => setIsAuthenticated(Boolean(data?.userId && data?.role === "client")))
-      .catch(() => setIsAuthenticated(false))
+      .then((data) => {
+        setIsLoggedIn(Boolean(data?.userId))
+        setUserRole(typeof data?.role === "string" ? data.role : null)
+      })
+      .catch(() => {
+        setIsLoggedIn(false)
+        setUserRole(null)
+      })
   }, [])
 
   const brief = useMemo(() => buildBrief(messages), [messages])
@@ -116,7 +126,7 @@ export function BriefDocument() {
         <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-end mb-10 pb-10 border-b border-border/60">
           <div>
             <p className="nb-eyebrow mb-3">Техническое задание · черновик</p>
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight font-medium text-balance leading-[1.02]">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight font-medium text-balance leading-[1.02] break-words">
               {brief.title}
             </h1>
             <dl className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3 max-w-2xl">
@@ -137,7 +147,7 @@ export function BriefDocument() {
             </dl>
           </div>
 
-          <BriefActions briefText={briefText} messages={messages} isAuthenticated={isAuthenticated} />
+          <BriefActions briefText={briefText} messages={messages} isLoggedIn={isLoggedIn} userRole={userRole} />
         </div>
 
         <div className="grid lg:grid-cols-[220px_1fr] gap-10 lg:gap-14">

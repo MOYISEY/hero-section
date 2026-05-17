@@ -11,7 +11,7 @@ type BriefMessage = {
   text: string
 }
 
-export function BriefActions({ briefText, messages = [], isAuthenticated }: { briefText: string; messages?: BriefMessage[]; isAuthenticated?: boolean }) {
+export function BriefActions({ briefText, messages = [], userRole, isLoggedIn }: { briefText: string; messages?: BriefMessage[]; userRole?: string | null; isLoggedIn?: boolean }) {
   const [sent, setSent] = useState(false)
 
   function downloadPdf() {
@@ -22,8 +22,15 @@ export function BriefActions({ briefText, messages = [], isAuthenticated }: { br
   }
 
   async function sendToManager() {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       toast.error("Войдите или зарегистрируйтесь, чтобы сохранить проект")
+      return
+    }
+
+    if (userRole !== "client") {
+      toast.error("Сохранение доступно только клиенту", {
+        description: "Для проверки сохранения войдите под аккаунтом клиента.",
+      })
       return
     }
 
@@ -49,7 +56,7 @@ export function BriefActions({ briefText, messages = [], isAuthenticated }: { br
 
   return (
     <div className="print:hidden space-y-4">
-      {!isAuthenticated && (
+      {!isLoggedIn && (
         <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-foreground">
           <p className="font-display text-lg">Войдите или зарегистрируйтесь, чтобы сохранить проект</p>
           <p className="mt-2 text-muted-foreground">Гость может просмотреть черновик, но сохранение ТЗ в базе доступно только клиенту.</p>

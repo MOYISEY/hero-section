@@ -2,6 +2,13 @@ import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
 import { extractRequirements, type SavedDialogMessage } from "@/lib/requirements"
 
+async function ensureProjectColumns(pool: NonNullable<ReturnType<typeof getPool>>) {
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS requirements_json JSONB")
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_released BOOLEAN NOT NULL DEFAULT FALSE")
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ")
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ")
+}
+
 export async function POST(req: Request) {
   const pool = getPool()
 
@@ -28,6 +35,8 @@ export async function POST(req: Request) {
   }
 
   try {
+    await ensureProjectColumns(pool)
+
     const managers = await pool.query(`SELECT id FROM users WHERE role = 'manager' AND status = 'active' LIMIT 10`)
 
     if (managers.rows.length === 0) {

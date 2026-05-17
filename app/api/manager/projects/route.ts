@@ -18,8 +18,9 @@ export async function PATCH(req: Request) {
 
   const body = await req.json().catch(() => null)
   const projectId = typeof body?.projectId === "string" ? body.projectId : ""
-  const action = body?.action === "reject" ? "reject" : body?.action === "approve" ? "approve" : body?.action === "close_task" ? "close_task" : null
+  const action = body?.action === "reject" ? "reject" : body?.action === "approve" ? "approve" : body?.action === "close_task" ? "close_task" : body?.action === "return_task" ? "return_task" : body?.action === "delete_done" ? "delete_done" : null
   const developerId = typeof body?.developerId === "string" ? body.developerId : ""
+  const comment = typeof body?.comment === "string" ? body.comment.trim() : ""
 
   if (!projectId || !action) {
     return Response.json({ error: "Project id and action are required" }, { status: 400 })
@@ -29,6 +30,84 @@ export async function PATCH(req: Request) {
 
   try {
     await client.query("BEGIN")
+
+    if (action === "delete_done") {
+      const result = await client.query(
+        `
+          UPDATE projects
+          SET archived_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND manager_id = $2 AND status = 'done'
+          RETURNING id
+        `,
+        [projectId, managerId],
+      )
+
+      if (!result.rows[0]) {
+        await client.query("ROLLBACK")
+        return Response.json({ error: "Only done projects can be removed from manager list" }, { status: 404 })
+      }
+
+      await client.query("COMMIT")
+      return Response.json({ ok: true, status: "archived" })
+    }
+
+    if (action === "return_task") {
+      if (!comment) {
+        await client.query("ROLLBACK")
+        return Response.json({ error: "Комментарий обязателен при возврате задачи" }, { status: 400 })
+      }
+
+      const result = await client.query(
+        `
+          UPDATE projects
+          SET status = 'in_development', updated_at = NOW()
+          WHERE id = $1 AND manager_id = $2 AND status = 'review'
+          RETURNING id, title
+        `,
+        [projectId, managerId],
+      )
+
+      const project = result.rows[0]
+
+      if (!project) {
+        await client.query("ROLLBACK")
+        return Response.json({ error: "Project is not available for return" }, { status: 404 })
+      }
+
+      const tasks = await client.query(
+        `
+          UPDATE tasks
+          SET status = 'in_progress', updated_at = NOW()
+          WHERE project_id = $1
+          RETURNING id, title
+        `,
+        [project.id],
+      )
+
+      await client.query(
+        `
+          INSERT INTO project_chat_messages (chat_id, sender_id, content)
+          SELECT pc.id, $2::UUID, $3
+          FROM project_chats pc
+          WHERE pc.project_id = $1 AND pc.channel = 'manager_developer'
+        `,
+        [project.id, managerId, `Задача возвращена на доработку: ${comment}`],
+      )
+
+      await client.query(
+        `
+          INSERT INTO notifications (user_id, title, body, channel)
+          SELECT ta.developer_id, 'Задача возвращена на доработку', $1, 'system'
+          FROM task_assignments ta
+          JOIN tasks t ON t.id = ta.task_id
+          WHERE t.project_id = $2
+        `,
+        [`Менеджер вернул проект "${project.title}" на доработку: ${comment}`, project.id],
+      )
+
+      await client.query("COMMIT")
+      return Response.json({ ok: true, status: "returned", tasks: tasks.rows.length })
+    }
 
     if (action === "close_task") {
       const result = await client.query(

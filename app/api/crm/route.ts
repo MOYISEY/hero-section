@@ -9,6 +9,14 @@ const emptyData = {
   notifications: [],
 }
 
+async function ensureCrmColumns(pool: NonNullable<ReturnType<typeof getPool>>) {
+  await pool.query("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ")
+  await pool.query("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ")
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS specialization TEXT")
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS repository_url TEXT")
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS repository_url TEXT")
+}
+
 export async function GET() {
   const pool = getPool()
 
@@ -17,6 +25,8 @@ export async function GET() {
   }
 
   try {
+    await ensureCrmColumns(pool)
+
     const cookieStore = await cookies()
     const userId = cookieStore.get("neuralbrief.userId")?.value || null
     const role = cookieStore.get("neuralbrief.role")?.value || null
@@ -105,6 +115,7 @@ export async function GET() {
         LEFT JOIN task_assignments ta ON ta.task_id = t.id
         LEFT JOIN users u ON u.id = ta.developer_id
         WHERE p.manager_id = $1::UUID
+          AND p.archived_at IS NULL
         ORDER BY t.updated_at DESC
         LIMIT 10
       `, [userId]) : Promise.resolve({ rows: [] }),

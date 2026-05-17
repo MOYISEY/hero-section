@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Download } from "lucide-react"
 import { toast } from "sonner"
+import { ProjectChatPanel } from "@/components/crm/project-chat-panel"
 
 type ClientProject = {
   id: string
@@ -88,6 +89,7 @@ export function MyProjects() {
                   </button>
                 </div>
                 <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{project.brief_text || "ТЗ без текста"}</p>
+                <ProjectChatPanel projectId={project.id} channel="manager_client" title="Чат с менеджером" />
                 <div className="mt-5 grid gap-2 md:grid-cols-4">
                   {steps.map((step, index) => (
                     <div key={step.key} className={index <= currentIndex ? "rounded-full bg-primary px-3 py-2 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-primary-foreground" : "rounded-full border border-border px-3 py-2 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"}>{step.label}</div>

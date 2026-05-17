@@ -23,10 +23,10 @@ async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, user
         SELECT id
         FROM projects
         WHERE id = $1::UUID
-          AND (manager_id = $2::UUID OR client_id = $2::UUID)
+          AND (manager_id = $2::UUID OR client_id = $2::UUID OR ($3 = 'manager' AND status = 'draft'))
         LIMIT 1
       `,
-      [projectId, userId],
+      [projectId, userId, role],
     )
 
     return Boolean(result.rows[0]) && (role === "manager" || role === "client")
@@ -63,6 +63,28 @@ async function ensureChat(pool: NonNullable<ReturnType<typeof getPool>>, channel
   return result.rows[0]
 }
 
+async function ensureChatTables(pool: NonNullable<ReturnType<typeof getPool>>) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_chats (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+      channel TEXT NOT NULL CHECK (channel IN ('manager_client', 'manager_developer', 'director_user')),
+      target_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(project_id, channel, target_user_id)
+    )
+  `)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_chat_messages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      chat_id UUID NOT NULL REFERENCES project_chats(id) ON DELETE CASCADE,
+      sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+}
+
 export async function GET(req: Request) {
   const pool = getPool()
 
@@ -87,6 +109,7 @@ export async function GET(req: Request) {
     return Response.json({ error: "Valid channel is required" }, { status: 400 })
   }
 
+  await ensureChatTables(pool)
   const allowed = await canAccessChat(pool, userId, role, channel, projectId, targetUserId)
 
   if (!allowed) {
@@ -134,6 +157,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Channel and message content are required" }, { status: 400 })
   }
 
+  await ensureChatTables(pool)
   const allowed = await canAccessChat(pool, userId, role, channel, projectId, targetUserId)
 
   if (!allowed) {
@@ -151,4 +175,41 @@ export async function POST(req: Request) {
   )
 
   return Response.json({ ok: true, chat, message: message.rows[0] })
+}
+
+export async function DELETE(req: Request) {
+  const pool = getPool()
+
+  if (!pool) {
+    return Response.json({ error: "DATABASE_URL is not configured" }, { status: 500 })
+  }
+
+  const cookieStore = await cookies()
+  const userId = cookieStore.get("neuralbrief.userId")?.value || null
+  const role = cookieStore.get("neuralbrief.role")?.value || null
+
+  if (!userId) {
+    return Response.json({ error: "Authentication required" }, { status: 401 })
+  }
+
+  const url = new URL(req.url)
+  const channel = isChatChannel(url.searchParams.get("channel")) ? url.searchParams.get("channel") as ChatChannel : null
+  const projectId = url.searchParams.get("projectId")
+  const targetUserId = url.searchParams.get("targetUserId")
+
+  if (!channel) {
+    return Response.json({ error: "Valid channel is required" }, { status: 400 })
+  }
+
+  await ensureChatTables(pool)
+  const allowed = await canAccessChat(pool, userId, role, channel, projectId, targetUserId)
+
+  if (!allowed) {
+    return Response.json({ error: "Access denied" }, { status: 403 })
+  }
+
+  const chat = await ensureChat(pool, channel, projectId, targetUserId)
+  await pool.query("DELETE FROM project_chat_messages WHERE chat_id = $1::UUID", [chat.id])
+
+  return Response.json({ ok: true })
 }

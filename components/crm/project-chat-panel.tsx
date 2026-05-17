@@ -50,6 +50,19 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
     loadMessages()
   }
 
+  async function clearChat() {
+    const response = await fetch(`/api/chats?projectId=${projectId}&channel=${channel}`, { method: "DELETE" })
+    const result = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      toast.error("Не удалось очистить чат", { description: result?.error || "Проверьте доступ к чату." })
+      return
+    }
+
+    setMessages([])
+    toast.success("Чат очищен")
+  }
+
   return (
     <div className="mt-5 rounded-2xl border border-border bg-surface/60 p-4">
       <button type="button" onClick={() => setOpen((value) => !value)} className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
@@ -59,6 +72,11 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
 
       {open && (
         <div className="mt-4">
+          <div className="mb-3 flex justify-end">
+            <button type="button" onClick={clearChat} className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-destructive">
+              Очистить чат
+            </button>
+          </div>
           <div className="max-h-64 space-y-3 overflow-auto rounded-2xl border border-border bg-background-alt p-3">
             {messages.length ? messages.map((message) => (
               <div key={message.id} className={cn("rounded-xl border border-border/60 p-3", message.sender_role === "manager" ? "bg-primary/10" : "bg-surface") }>

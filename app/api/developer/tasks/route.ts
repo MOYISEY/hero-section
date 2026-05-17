@@ -60,6 +60,11 @@ export async function PATCH(req: Request) {
       return Response.json({ error: "Task not found or not assigned to you" }, { status: 404 })
     }
 
+    if ((status === "review" || status === "done") && !task.repository_url) {
+      await client.query("ROLLBACK")
+      return Response.json({ error: "Перед отправкой на проверку нужно прикрепить GitHub репозиторий" }, { status: 400 })
+    }
+
     if (status === "review" || status === "done") {
       await client.query(
         `

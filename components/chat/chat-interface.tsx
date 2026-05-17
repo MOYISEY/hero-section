@@ -5,7 +5,8 @@ import { DefaultChatTransport, type UIMessage } from "ai"
 import Link from "next/link"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { extractRequirements } from "@/lib/requirements"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
 type SpeechRecognitionConstructor = new () => SpeechRecognition
 
@@ -44,15 +45,16 @@ type Step = {
   id: string
   label: string
   hint: string
+  question: string
 }
 
 const STEPS: Step[] = [
-  { id: "01", label: "Тип проекта", hint: "Что мы строим" },
-  { id: "02", label: "Цели", hint: "Зачем строим" },
-  { id: "03", label: "Аудитория", hint: "Для кого" },
-  { id: "04", label: "Функциональность", hint: "Что должен уметь сайт" },
-  { id: "05", label: "Дизайн", hint: "Тон и характер" },
-  { id: "06", label: "Сроки и формат", hint: "Когда и в каком виде" },
+  { id: "01", label: "Тип проекта", hint: "Что мы строим", question: "Что нужно создать: сайт, CRM, маркетплейс, сервис, приложение или другой продукт?" },
+  { id: "02", label: "Цели", hint: "Зачем строим", question: "Какую бизнес-задачу должен решить проект и какой результат будет считаться успехом?" },
+  { id: "03", label: "Аудитория", hint: "Для кого", question: "Кто будет пользоваться продуктом и какие роли пользователей нужны?" },
+  { id: "04", label: "Функциональность", hint: "Что должен уметь сайт", question: "Какие функции обязательны для первой версии MVP?" },
+  { id: "05", label: "Дизайн", hint: "Тон и характер", question: "Какой стиль, цвета или референсы нужно учитывать в интерфейсе?" },
+  { id: "06", label: "Сроки и формат", hint: "Когда и в каком виде", question: "Какие сроки, ограничения, интеграции и приоритеты важны?" },
 ]
 
 const INITIAL_MESSAGES: UIMessage[] = [
@@ -69,6 +71,32 @@ const INITIAL_MESSAGES: UIMessage[] = [
   },
 ]
 
+function buildMessage(role: UIMessage["role"], text: string, id: string): UIMessage {
+  return {
+    id,
+    role,
+    parts: [{ type: "text", text }],
+  }
+}
+
+function getInitialMessages(): UIMessage[] {
+  if (typeof window === "undefined") return INITIAL_MESSAGES
+
+  try {
+    const saved = localStorage.getItem("neuralbrief.chat")
+    if (!saved) return INITIAL_MESSAGES
+
+    const parsed = JSON.parse(saved) as { role?: string; text?: string }[]
+    const restored = parsed
+      .filter((message) => typeof message.role === "string" && typeof message.text === "string" && message.text.trim())
+      .map((message, index) => buildMessage(message.role as UIMessage["role"], message.text!.trim(), `saved-${index}`))
+
+    return restored.some((message) => message.role === "user") ? restored : INITIAL_MESSAGES
+  } catch {
+    return INITIAL_MESSAGES
+  }
+}
+
 function getText(message: UIMessage): string {
   if (!message.parts || !Array.isArray(message.parts)) return ""
   return message.parts
@@ -78,9 +106,10 @@ function getText(message: UIMessage): string {
 }
 
 export function ChatInterface() {
+  const initialMessages = useMemo(() => getInitialMessages(), [])
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/hero-chat" }),
-    messages: INITIAL_MESSAGES,
+    messages: initialMessages,
   })
   const [input, setInput] = useState("")
   const [isRecording, setIsRecording] = useState(false)
@@ -88,13 +117,17 @@ export function ChatInterface() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const inputRef = useRef("")
+  const hasHydratedRef = useRef(false)
   const shouldKeepRecordingRef = useRef(false)
   const voiceBaseTextRef = useRef("")
   const isStreaming = status === "submitted" || status === "streaming"
-  const userMessagesCount = messages.filter((message) => message.role === "user").length
-  const stepIndex = Math.min(userMessagesCount, STEPS.length - 1)
-  const progress = Math.round(((stepIndex + 1) / STEPS.length) * 100)
-  const done = userMessagesCount >= 4
+  const savedDialogMessages = messages
+    .map((message) => ({ role: message.role, text: getText(message) }))
+    .filter((message) => message.text)
+  const requirements = extractRequirements(savedDialogMessages)
+  const progress = requirements.completeness
+  const stepIndex = Math.min(Math.floor((progress / 100) * STEPS.length), STEPS.length - 1)
+  const done = progress >= 85
 
   useEffect(() => {
     const el = scrollRef.current
@@ -107,6 +140,11 @@ export function ChatInterface() {
   }, [input])
 
   useEffect(() => {
+    if (!hasHydratedRef.current) {
+      hasHydratedRef.current = true
+      if (!messages.some((message) => message.role === "user")) return
+    }
+
     const savedMessages = messages
       .map((message) => ({
         role: message.role,
@@ -272,6 +310,28 @@ export function ChatInterface() {
               <p className="mt-1.5 text-[13px] text-muted-foreground">
                 {STEPS[stepIndex].hint}
               </p>
+              <div className="mt-5 rounded-xl border border-border/70 bg-surface/30 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Следующий уточняющий вопрос
+                </p>
+                <p className="mt-2 text-[13px] leading-relaxed text-foreground">
+                  {STEPS[stepIndex].question}
+                </p>
+              </div>
+              <div className="mt-4 rounded-xl border border-border/70 bg-background/40 p-4">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Нужно уточнить
+                </p>
+                {requirements.missingFields.length ? (
+                  <ul className="mt-2 space-y-1.5 text-[12px] text-muted-foreground">
+                    {requirements.missingFields.map((field) => (
+                      <li key={field}>- {field}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-[12px] text-muted-foreground">Критические данные собраны.</p>
+                )}
+              </div>
             </div>
 
             <ol className="mt-6 flex flex-col">

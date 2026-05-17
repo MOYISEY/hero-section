@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { NotificationList } from "@/components/crm/notification-list"
+import { ProjectChatPanel } from "@/components/crm/project-chat-panel"
 
 type RequestItem = { id: string; title: string; brief_text: string | null; status: string; client_name: string; client_email: string | null }
 type Developer = { id: string; name: string; stack: string; load: string }
@@ -13,6 +14,7 @@ type CrmData = { requests: RequestItem[]; developers: Developer[]; notifications
 export function ManagerDashboard() {
   const [data, setData] = useState<CrmData>({ requests: [], developers: [], notifications: [], managerTasks: [] })
   const [selectedDevelopers, setSelectedDevelopers] = useState<Record<string, string>>({})
+  const [returnComments, setReturnComments] = useState<Record<string, string>>({})
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
 
   function loadData() {
@@ -60,6 +62,48 @@ export function ManagerDashboard() {
     loadData()
   }
 
+  async function returnTask(projectId: string) {
+    const comment = returnComments[projectId]?.trim() || ""
+    if (!comment) {
+      toast.error("Напишите комментарий для разработчика")
+      return
+    }
+    setLoadingAction(`return:${projectId}`)
+    const response = await fetch("/api/manager/projects", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, action: "return_task", comment }),
+    })
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      toast.error("Не удалось вернуть задачу", { description: result?.error || "Попробуйте ещё раз." })
+      setLoadingAction(null)
+      return
+    }
+    toast.success("Задача возвращена разработчику")
+    setLoadingAction(null)
+    setReturnComments((current) => ({ ...current, [projectId]: "" }))
+    loadData()
+  }
+
+  async function deleteDone(projectId: string) {
+    setLoadingAction(`delete:${projectId}`)
+    const response = await fetch("/api/manager/projects", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, action: "delete_done" }),
+    })
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      toast.error("Не удалось убрать задачу", { description: result?.error || "Можно убрать только закрытую задачу." })
+      setLoadingAction(null)
+      return
+    }
+    toast.success("Готовая задача убрана из списка")
+    setLoadingAction(null)
+    loadData()
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
       <div className="space-y-6">
@@ -73,6 +117,7 @@ export function ManagerDashboard() {
                   <span className="rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">new</span>
                 </div>
                 <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{request.brief_text || "ТЗ без текста"}</p>
+                <ProjectChatPanel projectId={request.id} channel="manager_client" title="Чат с клиентом" />
                 <div className="mt-6 grid gap-3 md:grid-cols-[1fr_auto_auto]">
                   <select value={selectedDevelopers[request.id] || ""} onChange={(event) => setSelectedDevelopers((current) => ({ ...current, [request.id]: event.target.value }))} className="rounded-full border border-border bg-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground outline-none">
                     <option value="">Выберите разработчика</option>
@@ -97,9 +142,23 @@ export function ManagerDashboard() {
                 </div>
                 <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{task.description || "Описание отсутствует"}</p>
                 <p className="mt-4 break-words text-xs text-muted-foreground">Repo: {task.repo || "Не прикреплён"}</p>
+                <ProjectChatPanel projectId={task.project_id} channel="manager_developer" title="Чат с разработчиком" />
                 {task.project_status === "review" && (
-                  <button onClick={() => closeTask(task.project_id)} className="mt-5 rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">
-                    {loadingAction === `close:${task.project_id}` ? "..." : "Закрыть задачу"}
+                  <div className="mt-5 grid gap-3">
+                    <input value={returnComments[task.project_id] || ""} onChange={(event) => setReturnComments((current) => ({ ...current, [task.project_id]: event.target.value }))} placeholder="Комментарий для возврата разработчику" className="rounded-full border border-border bg-surface px-4 py-2 text-sm outline-none focus:border-primary" />
+                    <div className="flex flex-wrap gap-3">
+                      <button onClick={() => returnTask(task.project_id)} className="rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground">
+                        {loadingAction === `return:${task.project_id}` ? "..." : "Вернуть на доработку"}
+                      </button>
+                      <button onClick={() => closeTask(task.project_id)} className="rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground">
+                        {loadingAction === `close:${task.project_id}` ? "..." : "Закрыть задачу"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {task.project_status === "done" && (
+                  <button onClick={() => deleteDone(task.project_id)} className="mt-5 rounded-full border border-destructive/40 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-destructive">
+                    {loadingAction === `delete:${task.project_id}` ? "..." : "Убрать готовую задачу"}
                   </button>
                 )}
               </article>

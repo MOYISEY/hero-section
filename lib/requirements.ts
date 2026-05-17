@@ -55,9 +55,20 @@ function normalize(text: string) {
 
 function sentences(text: string) {
   return text
+    .replace(/\b(0?[1-9]|1[0-2])\s+([А-ЯA-ZЁ][а-яa-zё]+)/g, "\n$1 $2")
     .split(/[\n.!?;]/)
     .map((item) => item.trim())
+    .map((item) => item.replace(/^(0?[1-9]|1[0-2])\s+/, ""))
     .filter((item) => item.length > 6)
+}
+
+function sectionValue(text: string, labels: string[]) {
+  if (!/(\n|^)\s*0?\d\s+/.test(text) && !/[:—-]/.test(text)) return ""
+
+  const normalizedLabels = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  const labelPattern = normalizedLabels.join("|")
+  const match = text.match(new RegExp(`(?:^|\\n|\\s)(?:0?\\d\\s+)?(?:${labelPattern})\\s*[:—-]?\\s*([\\s\\S]*?)(?=\\n\\s*(?:0?\\d\\s+)?[А-ЯA-ZЁ][а-яa-zё\\s]{2,25}\\s*[:—-]?|$)`, "i"))
+  return match?.[1]?.trim() || ""
 }
 
 function findFirstByKeywords(items: string[], keywords: string[]) {
@@ -84,9 +95,9 @@ export function extractRequirements(messages: SavedDialogMessage[]): StructuredR
   const userText = userMessages.map((message) => message.text).join(". ")
   const items = sentences(userText)
 
-  const projectType = findFirstByKeywords(items, projectKeywords)
-  const goal = findFirstByKeywords(items, ["цель", "нужно", "хочу", "задач", "чтобы", "автоматиз"])
-  const audience = findFirstByKeywords(items, audienceKeywords)
+  const projectType = sectionValue(userText, ["тип проекта", "проект"]) || findFirstByKeywords(items, projectKeywords)
+  const goal = sectionValue(userText, ["цели", "цель", "задача", "задачи"]) || findFirstByKeywords(items, ["цель", "нужно", "хочу", "задач", "чтобы", "автоматиз"])
+  const audience = sectionValue(userText, ["аудитория", "целевая аудитория", "для кого"]) || findFirstByKeywords(items, audienceKeywords)
   const features = findListByKeywords(items, featureKeywords)
   const design = findFirstByKeywords(items, designKeywords)
   const pages = findListByKeywords(items, pageKeywords)
