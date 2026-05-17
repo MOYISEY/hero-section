@@ -23,9 +23,13 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
   function loadMessages() {
     if (!open) return
     fetch(`/api/chats?projectId=${projectId}&channel=${channel}`)
-      .then((response) => response.ok ? response.json() : { messages: [] })
+      .then(async (response) => {
+        const data = response.ok ? await response.json() : { messages: [], error: "load failed" }
+        console.log("[chat:panel] loadMessages response:", response.status, data)
+        return data
+      })
       .then((data) => setMessages(data.messages || []))
-      .catch(() => undefined)
+      .catch((error) => console.error("[chat:panel] loadMessages error:", error))
   }
 
   useEffect(() => { loadMessages() }, [open, projectId, channel])
@@ -33,12 +37,14 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
   async function sendMessage() {
     if (!content.trim()) return
     setLoading(true)
+    console.log("[chat:panel] sendMessage projectId:", projectId, "channel:", channel)
     const response = await fetch("/api/chats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ projectId, channel, content }),
     })
     const result = await response.json().catch(() => null)
+    console.log("[chat:panel] sendMessage response:", response.status, result)
     setLoading(false)
 
     if (!response.ok) {
@@ -51,8 +57,10 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
   }
 
   async function clearChat() {
+    console.log("[chat:panel] clearChat projectId:", projectId, "channel:", channel)
     const response = await fetch(`/api/chats?projectId=${projectId}&channel=${channel}`, { method: "DELETE" })
     const result = await response.json().catch(() => null)
+    console.log("[chat:panel] clearChat response:", response.status, result)
 
     if (!response.ok) {
       toast.error("Не удалось очистить чат", { description: result?.error || "Проверьте доступ к чату." })
@@ -89,7 +97,13 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
           </div>
 
           <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
-            <input value={content} onChange={(event) => setContent(event.target.value)} placeholder="Написать сообщение..." className="rounded-full border border-border bg-background-alt px-4 py-2 text-sm outline-none focus:border-primary" />
+            <input
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage() } }}
+              placeholder="Написать сообщение..."
+              className="rounded-full border border-border bg-background-alt px-4 py-2 text-sm outline-none focus:border-primary"
+            />
             <button type="button" onClick={sendMessage} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-primary-foreground disabled:opacity-60">
               <Send className="size-4" />
               {loading ? "..." : "Отправить"}

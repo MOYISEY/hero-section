@@ -10,17 +10,22 @@ function isChatChannel(value: unknown): value is ChatChannel {
 }
 
 async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, userId: string, role: string | null, channel: ChatChannel, projectId: string | null, targetUserId: string | null) {
+  console.log("[chat:access] channel:", channel, "userId:", userId, "role:", role, "projectId:", projectId, "targetUserId:", targetUserId)
+
   if (channel === "director_user") {
     if (role === "director") return Boolean(targetUserId)
     return targetUserId === userId
   }
 
-  if (!projectId) return false
+  if (!projectId) {
+    console.log("[chat:access] denied: no projectId")
+    return false
+  }
 
   if (channel === "manager_client") {
     const result = await pool.query(
       `
-        SELECT id
+        SELECT id, client_id, manager_id, status
         FROM projects
         WHERE id = $1::UUID
           AND (manager_id = $2::UUID OR client_id = $2::UUID OR ($3 = 'manager' AND status = 'draft'))
@@ -28,13 +33,13 @@ async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, user
       `,
       [projectId, userId, role],
     )
-
+    console.log("[chat:access] manager_client query rows:", result.rows.length, result.rows[0])
     return Boolean(result.rows[0]) && (role === "manager" || role === "client")
   }
 
   const result = await pool.query(
     `
-      SELECT p.id
+      SELECT p.id, p.manager_id, ta.developer_id
       FROM projects p
       LEFT JOIN tasks t ON t.project_id = p.id
       LEFT JOIN task_assignments ta ON ta.task_id = t.id
@@ -44,17 +49,29 @@ async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, user
     `,
     [projectId, userId],
   )
+  console.log("[chat:access] manager_developer query rows:", result.rows.length, result.rows[0])
 
   return Boolean(result.rows[0]) && (role === "manager" || role === "developer")
 }
 
 async function ensureChat(pool: NonNullable<ReturnType<typeof getPool>>, channel: ChatChannel, projectId: string | null, targetUserId: string | null) {
+  // PostgreSQL ON CONFLICT does not match NULL values, so we must search manually first.
+  const existing = await pool.query(
+    `
+      SELECT id, project_id, channel, target_user_id, created_at
+      FROM project_chats
+      WHERE project_id = $1::UUID AND channel = $2 AND target_user_id IS NOT DISTINCT FROM $3::UUID
+      LIMIT 1
+    `,
+    [projectId, channel, targetUserId],
+  )
+
+  if (existing.rows[0]) return existing.rows[0]
+
   const result = await pool.query(
     `
       INSERT INTO project_chats (project_id, channel, target_user_id)
       VALUES ($1::UUID, $2, $3::UUID)
-      ON CONFLICT (project_id, channel, target_user_id) DO UPDATE
-      SET channel = EXCLUDED.channel
       RETURNING id, project_id, channel, target_user_id, created_at
     `,
     [projectId, channel, targetUserId],
@@ -153,12 +170,15 @@ export async function POST(req: Request) {
   const targetUserId = typeof body?.targetUserId === "string" ? body.targetUserId : null
   const content = typeof body?.content === "string" ? body.content.trim() : ""
 
+  console.log("[chat:post] body:", body, "channel:", channel, "projectId:", projectId, "content:", content ? "present" : "missing")
+
   if (!channel || !content) {
     return Response.json({ error: "Channel and message content are required" }, { status: 400 })
   }
 
   await ensureChatTables(pool)
   const allowed = await canAccessChat(pool, userId, role, channel, projectId, targetUserId)
+  console.log("[chat:post] allowed:", allowed)
 
   if (!allowed) {
     return Response.json({ error: "Access denied" }, { status: 403 })
