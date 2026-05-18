@@ -4,25 +4,9 @@ import { HeroChat } from "./hero-chat"
 export function LandingHero() {
   return (
     <section className="relative border-b border-border nb-grid">
-      {/* HUD strip */}
-      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 pt-6 pb-4 flex items-center justify-between text-[11px] font-mono tracking-[0.16em] uppercase text-muted-foreground border-b border-border/60">
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden className="nb-status-dot" />
-          NeuralBrief / system online
-        </span>
-        <span className="hidden sm:inline">PROTOCOL · BRIEF.AI v.01</span>
-        <span>NODE 01 / 04</span>
-      </div>
-
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-20 pb-16 lg:pb-24 overflow-hidden">
         <div className="grid lg:grid-cols-2 gap-x-10 gap-y-12 items-start">
-          {/* LEFT — primary signal */}
           <div className="relative z-[2] min-w-0">
-            <p className="nb-eyebrow mb-8 inline-flex items-center gap-2">
-              <span aria-hidden className="size-1 rounded-full bg-primary" />
-              SIGNAL · 01
-            </p>
-
             <h1
               className="font-display font-medium tracking-[-0.025em] leading-[1.02] text-[40px] sm:text-[52px] lg:text-[58px] xl:text-[72px] text-pretty hyphens-none [word-break:keep-all]"
               lang="ru"
@@ -34,22 +18,9 @@ export function LandingHero() {
               <span className="text-primary">в задачу</span>.
             </h1>
 
-            <div className="mt-12 grid sm:grid-cols-12 gap-x-6 gap-y-8 max-w-[820px]">
-              <p className="sm:col-span-7 text-[17px] leading-[1.55] text-foreground">
-                Техническое задание начинается не с шаблона в Excel,
-                а с честного разговора о цели. NeuralBrief задаёт
-                вопросы, которые задал бы внимательный арт-директор,
-                и сводит ответы в один документ.
-              </p>
-              <div className="sm:col-span-5 sm:border-l sm:border-border sm:pl-6 flex flex-col gap-3">
-                <p className="nb-folio uppercase tracking-widest">/ контекст</p>
-                <p className="text-[14px] leading-relaxed text-subtle-foreground">
-                  Инструмент для небольших студий, которым надоело
-                  тратить два часа на созвон, чтобы получить десять
-                  пунктов в блокноте.
-                </p>
-              </div>
-            </div>
+            <p className="mt-8 max-w-2xl text-[17px] leading-[1.55] text-foreground">
+              NeuralBrief задаёт вопросы клиенту и собирает ответы в понятное техническое задание.
+            </p>
 
             <div className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-4">
               <Link
@@ -71,52 +42,14 @@ export function LandingHero() {
                 href="/brief"
                 className="inline-flex items-center gap-3 border border-border-strong px-6 py-3.5 text-[14px] font-medium tracking-tight text-foreground transition-colors hover:border-primary hover:text-primary"
               >
-                <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-muted-foreground group-hover:text-primary">
-                  /
-                </span>
                 <span>Прочитать готовое ТЗ</span>
               </Link>
             </div>
           </div>
 
-          {/* RIGHT — live conversation preview */}
           <figure className="relative z-[1] min-w-0 self-end">
             <HeroChat />
-            <figcaption className="mt-4 flex items-baseline gap-3 text-[12px] text-muted-foreground">
-              <span className="font-mono tracking-widest uppercase">/ visual 01</span>
-              <span className="leading-snug">
-                Так выглядит исходный материал любого ТЗ, пока
-                NeuralBrief не приведёт его в порядок.
-              </span>
-            </figcaption>
           </figure>
-        </div>
-
-        {/* Stats deck */}
-        <div className="mt-20 grid sm:grid-cols-3 border-y border-border divide-y sm:divide-y-0 sm:divide-x divide-border">
-          {[
-            { k: "В среднем", v: "0 минут", d: "данные появятся после тестов" },
-            { k: "Точность", v: "0%", d: "данные появятся после тестов" },
-            { k: "Вопросов", v: "0", d: "данные появятся после тестов" },
-          ].map((item, i) => (
-            <div
-              key={item.k}
-              className="py-7 sm:px-7 first:sm:pl-0 last:sm:pr-0 flex items-baseline gap-5"
-            >
-              <span className="font-mono text-[11px] text-primary tracking-[0.16em] uppercase shrink-0 w-7">
-                /0{i + 1}
-              </span>
-              <div>
-                <p className="nb-eyebrow mb-1">{item.k}</p>
-                <p className="font-display text-[28px] tracking-tight leading-none">
-                  {item.v}
-                </p>
-                <p className="mt-1.5 text-[13px] text-subtle-foreground leading-snug">
-                  {item.d}
-                </p>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>

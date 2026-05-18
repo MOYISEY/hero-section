@@ -57,10 +57,6 @@ export function SiteNav() {
           aria-label="NeuralBrief — на главную"
         >
           <span aria-hidden className="nb-status-dot" />
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-            v.01 / 2026
-          </span>
-          <span aria-hidden className="h-3 w-px bg-border" />
           <span className="font-display text-[19px] tracking-tight font-medium leading-none">
             NeuralBrief
           </span>
@@ -70,7 +66,7 @@ export function SiteNav() {
           className="hidden md:flex min-w-0 flex-1 items-center justify-center gap-4 lg:gap-5"
           aria-label="Основная навигация"
         >
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const active = pathname === item.href
             return (
               <Link
@@ -83,9 +79,6 @@ export function SiteNav() {
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <span className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground/70">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
                 <span className="relative">
                   {item.label}
                   <span
@@ -135,7 +128,7 @@ export function SiteNav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-6 py-4 flex flex-col">
-            {navItems.map((item, index) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -144,9 +137,6 @@ export function SiteNav() {
                   pathname === item.href ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                <span className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground/70 w-6">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
                 <span className="font-display">{item.label}</span>
               </Link>
             ))}
