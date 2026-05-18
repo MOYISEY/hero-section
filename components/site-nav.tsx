@@ -9,12 +9,12 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthStatus } from "@/components/auth/auth-status"
 
 const NAV = [
-  { href: "/", label: "Главная", num: "01" },
-  { href: "/chat", label: "Диалог", num: "02" },
-  { href: "/brief", label: "Образец ТЗ", num: "03" },
-  { href: "/manager", label: "Менеджер", num: "04", role: "manager" },
-  { href: "/developer", label: "Разработчик", num: "05", role: "developer" },
-  { href: "/about", label: "О системе", num: "06" },
+  { href: "/", label: "Главная" },
+  { href: "/chat", label: "Диалог" },
+  { href: "/brief", label: "Образец ТЗ" },
+  { href: "/manager", label: "Менеджер", role: "manager" },
+  { href: "/developer", label: "Разработчик", role: "developer" },
+  { href: "/about", label: "О системе" },
 ] as const
 
 export function SiteNav() {
@@ -70,7 +70,7 @@ export function SiteNav() {
           className="hidden md:flex min-w-0 flex-1 items-center justify-center gap-4 lg:gap-5"
           aria-label="Основная навигация"
         >
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const active = pathname === item.href
             return (
               <Link
@@ -84,7 +84,7 @@ export function SiteNav() {
                 )}
               >
                 <span className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground/70">
-                  {item.num}
+                  {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="relative">
                   {item.label}
@@ -135,7 +135,7 @@ export function SiteNav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-6 py-4 flex flex-col">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -145,7 +145,7 @@ export function SiteNav() {
                 )}
               >
                 <span className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground/70 w-6">
-                  {item.num}
+                  {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="font-display">{item.label}</span>
               </Link>
