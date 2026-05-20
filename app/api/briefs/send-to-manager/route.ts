@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
+import { sendEmailNotification } from "@/lib/email"
 import { extractRequirements, type SavedDialogMessage } from "@/lib/requirements"
 
 async function ensureProjectColumns(pool: NonNullable<ReturnType<typeof getPool>>) {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   try {
     await ensureProjectColumns(pool)
 
-    const managers = await pool.query(`SELECT id FROM users WHERE role = 'manager' AND status = 'active' LIMIT 10`)
+    const managers = await pool.query(`SELECT id, email FROM users WHERE role = 'manager' AND status = 'active' LIMIT 10`)
 
     if (managers.rows.length === 0) {
       return Response.json({ error: "No active managers found" }, { status: 404 })
@@ -53,15 +54,20 @@ export async function POST(req: Request) {
     )
 
     await Promise.all(
-      managers.rows.map((manager) =>
-        pool.query(
+      managers.rows.map(async (manager) => {
+        await pool.query(
           `
             INSERT INTO notifications (user_id, title, body, channel)
             VALUES ($1, 'Новое ТЗ на рассмотрение', $2, 'system')
           `,
           [manager.id, `Клиент отправил ТЗ менеджеру. Project ID: ${project.rows[0].id}`],
-        ),
-      ),
+        )
+        await sendEmailNotification({
+          to: manager.email,
+          subject: "Новое ТЗ на рассмотрение",
+          text: `Клиент отправил новое ТЗ. Откройте панель менеджера: проект ${project.rows[0].id}`,
+        })
+      }),
     )
 
     return Response.json({ ok: true, projectId: project.rows[0].id, notifiedManagers: managers.rows.length })

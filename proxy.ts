@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 const protectedRoutes: Record<string, string[]> = {
   "/manager": ["manager"],
   "/developer": ["developer"],
+  "/director": ["director"],
 }
 
 export function proxy(request: NextRequest) {
@@ -26,5 +27,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/manager", "/developer"],
+  matcher: ["/manager", "/developer", "/director"],
 }

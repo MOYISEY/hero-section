@@ -39,7 +39,7 @@ export function RoleLogin() {
     }
 
     const role = data?.user?.role || "client"
-    const target = role === "manager" ? "/manager" : role === "developer" ? "/developer" : "/chat"
+    const target = role === "manager" ? "/manager" : role === "developer" ? "/developer" : role === "director" ? "/director" : "/chat"
 
     router.push(next || target)
     router.refresh()

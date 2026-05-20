@@ -1,5 +1,7 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
+import { sendEmailNotification } from "@/lib/email"
+import { createTrelloCard } from "@/lib/trello"
 
 export async function PATCH(req: Request) {
   const pool = getPool()
@@ -105,7 +107,23 @@ export async function PATCH(req: Request) {
         [`Менеджер вернул проект "${project.title}" на доработку: ${comment}`, project.id],
       )
 
+      const developers = await client.query(
+        `
+          SELECT DISTINCT u.email
+          FROM task_assignments ta
+          JOIN tasks t ON t.id = ta.task_id
+          JOIN users u ON u.id = ta.developer_id
+          WHERE t.project_id = $1
+        `,
+        [project.id],
+      )
+
       await client.query("COMMIT")
+      await Promise.all(developers.rows.map((developer) => sendEmailNotification({
+        to: developer.email,
+        subject: "Задача возвращена на доработку",
+        text: `Менеджер вернул проект "${project.title}" на доработку: ${comment}`,
+      })))
       return Response.json({ ok: true, status: "returned", tasks: tasks.rows.length })
     }
 
@@ -146,7 +164,14 @@ export async function PATCH(req: Request) {
         )
       }
 
+      const projectClient = project.client_id ? await client.query("SELECT email FROM users WHERE id = $1::UUID", [project.client_id]) : { rows: [] }
+
       await client.query("COMMIT")
+      await sendEmailNotification({
+        to: projectClient.rows[0]?.email,
+        subject: "Проект готов",
+        text: `Менеджер закрыл задачу по проекту: ${project.title}`,
+      })
       return Response.json({ ok: true, status: "done" })
     }
 
@@ -227,6 +252,26 @@ export async function PATCH(req: Request) {
       [developerId, `Менеджер назначил задачу по проекту: ${project.rows[0].title}`],
     )
 
+    const developer = await client.query("SELECT email FROM users WHERE id = $1::UUID", [developerId])
+
+    await client.query(
+      `
+        INSERT INTO project_chats (project_id, channel, target_user_id)
+        VALUES ($1::UUID, 'manager_client', NULL)
+        ON CONFLICT DO NOTHING
+      `,
+      [projectId],
+    )
+
+    await client.query(
+      `
+        INSERT INTO project_chats (project_id, channel, target_user_id)
+        VALUES ($1::UUID, 'manager_developer', NULL)
+        ON CONFLICT DO NOTHING
+      `,
+      [projectId],
+    )
+
     await client.query(
       `
         UPDATE notifications
@@ -239,6 +284,20 @@ export async function PATCH(req: Request) {
     )
 
     await client.query("COMMIT")
+    await createTrelloCard({
+      name: project.rows[0].title,
+      description: [
+        project.rows[0].brief_text || "Описание проекта не указано.",
+        "",
+        `Project ID: ${projectId}`,
+        `Task ID: ${task.rows[0].id}`,
+      ].join("\n"),
+    })
+    await sendEmailNotification({
+      to: developer.rows[0]?.email,
+      subject: "Новая задача назначена",
+      text: `Менеджер назначил вам задачу по проекту: ${project.rows[0].title}`,
+    })
 
     return Response.json({ ok: true, status: "approved", taskId: task.rows[0].id })
   } catch (error) {

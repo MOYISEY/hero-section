@@ -147,7 +147,16 @@ export function BriefDocument() {
             </dl>
           </div>
 
-          <BriefActions briefText={briefText} messages={messages} isLoggedIn={isLoggedIn} userRole={userRole} />
+          <BriefActions
+            briefText={briefText}
+            messages={messages}
+            isLoggedIn={isLoggedIn}
+            userRole={userRole}
+            onReset={() => {
+              setMessages(fallbackMessages())
+              setUpdatedAt("")
+            }}
+          />
         </div>
 
         <div className="grid lg:grid-cols-[220px_1fr] gap-10 lg:gap-14">

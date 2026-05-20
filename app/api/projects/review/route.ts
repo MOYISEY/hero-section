@@ -1,6 +1,20 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
 
+async function ensureProjectReviews(pool: NonNullable<ReturnType<typeof getPool>>) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_reviews (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      client_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS project_reviews_project_client_idx ON project_reviews(project_id, client_id)")
+}
+
 export async function POST(req: Request) {
   const pool = getPool()
 
@@ -29,11 +43,12 @@ export async function POST(req: Request) {
 
   try {
     await client.query("BEGIN")
+    await ensureProjectReviews(pool)
 
     const project = await client.query(
       `
         UPDATE projects
-        SET archived_at = NOW(), updated_at = NOW()
+        SET updated_at = NOW()
         WHERE id = $1::UUID AND client_id = $2::UUID AND status = 'done'
         RETURNING id
       `,
@@ -49,6 +64,10 @@ export async function POST(req: Request) {
       `
         INSERT INTO project_reviews (project_id, client_id, rating, comment)
         VALUES ($1::UUID, $2::UUID, $3, $4)
+        ON CONFLICT (project_id, client_id) DO UPDATE
+        SET rating = EXCLUDED.rating,
+            comment = EXCLUDED.comment,
+            created_at = NOW()
         RETURNING id, rating, comment, created_at
       `,
       [projectId, userId, rating, comment || null],

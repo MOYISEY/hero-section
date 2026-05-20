@@ -1,18 +1,19 @@
 ﻿"use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { NotificationList } from "@/components/crm/notification-list"
-import { ProjectChatPanel } from "@/components/crm/project-chat-panel"
 
 type RequestItem = { id: string; title: string; brief_text: string | null; status: string; client_name: string; client_email: string | null }
 type Developer = { id: string; name: string; stack: string; load: string }
 type Notification = { id: string; title: string; body: string | null; read_at?: string | null }
 type ManagerTask = { id: string; short_id: string; project_id: string; title: string; description: string | null; status: string; raw_status: string; repo: string; developer_name: string | null; project_title: string; project_status: string }
-type CrmData = { requests: RequestItem[]; developers: Developer[]; notifications: Notification[]; managerTasks: ManagerTask[] }
+type ProjectReview = { id: string; rating: number; comment: string | null; project_title: string; client_name: string | null; created_at: string }
+type CrmData = { requests: RequestItem[]; developers: Developer[]; notifications: Notification[]; managerTasks: ManagerTask[]; reviews: ProjectReview[] }
 
 export function ManagerDashboard() {
-  const [data, setData] = useState<CrmData>({ requests: [], developers: [], notifications: [], managerTasks: [] })
+  const [data, setData] = useState<CrmData>({ requests: [], developers: [], notifications: [], managerTasks: [], reviews: [] })
   const [selectedDevelopers, setSelectedDevelopers] = useState<Record<string, string>>({})
   const [returnComments, setReturnComments] = useState<Record<string, string>>({})
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
@@ -20,7 +21,7 @@ export function ManagerDashboard() {
   function loadData() {
     fetch("/api/crm")
       .then((response) => response.json())
-      .then((nextData) => setData({ requests: nextData.requests || [], developers: nextData.developers || [], notifications: nextData.notifications || [], managerTasks: nextData.managerTasks || [] }))
+      .then((nextData) => setData({ requests: nextData.requests || [], developers: nextData.developers || [], notifications: nextData.notifications || [], managerTasks: nextData.managerTasks || [], reviews: nextData.reviews || [] }))
       .catch(() => undefined)
   }
 
@@ -117,7 +118,9 @@ export function ManagerDashboard() {
                   <span className="rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">new</span>
                 </div>
                 <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{request.brief_text || "ТЗ без текста"}</p>
-                <ProjectChatPanel projectId={request.id} channel="manager_client" title="Чат с клиентом" />
+                <Link href={`/manager/chats?projectId=${request.id}&channel=manager_client`} className="mt-5 inline-flex rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary hover:text-primary">
+                  Открыть переписку
+                </Link>
                 <div className="mt-6 grid gap-3 md:grid-cols-[1fr_auto_auto]">
                   <select value={selectedDevelopers[request.id] || ""} onChange={(event) => setSelectedDevelopers((current) => ({ ...current, [request.id]: event.target.value }))} className="rounded-full border border-border bg-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground outline-none">
                     <option value="">Выберите разработчика</option>
@@ -142,7 +145,9 @@ export function ManagerDashboard() {
                 </div>
                 <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{task.description || "Описание отсутствует"}</p>
                 <p className="mt-4 break-words text-xs text-muted-foreground">Repo: {task.repo || "Не прикреплён"}</p>
-                <ProjectChatPanel projectId={task.project_id} channel="manager_developer" title="Чат с разработчиком" />
+                <Link href={`/manager/chats?projectId=${task.project_id}&channel=manager_developer`} className="mt-5 inline-flex rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary hover:text-primary">
+                  Открыть переписку
+                </Link>
                 {task.project_status === "review" && (
                   <div className="mt-5 grid gap-3">
                     <input value={returnComments[task.project_id] || ""} onChange={(event) => setReturnComments((current) => ({ ...current, [task.project_id]: event.target.value }))} placeholder="Комментарий для возврата разработчику" className="rounded-full border border-border bg-surface px-4 py-2 text-sm outline-none focus:border-primary" />
@@ -163,6 +168,24 @@ export function ManagerDashboard() {
                 )}
               </article>
             )) : <div className="rounded-2xl border border-dashed border-border bg-background-alt p-6 text-sm leading-6 text-muted-foreground">Назначенных задач пока нет.</div>}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
+          <div className="mb-5"><p className="nb-eyebrow">client reviews</p><h2 className="mt-2 font-display text-2xl">Отзывы клиентов</h2></div>
+          <div className="grid gap-4">
+            {data.reviews.length ? data.reviews.map((review) => (
+              <article key={review.id} className="rounded-2xl border border-border bg-background-alt p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-xl">{review.project_title}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Клиент: {review.client_name || "Не указан"}</p>
+                  </div>
+                  <span className="rounded-full bg-primary px-3 py-1 font-mono text-[10px] text-primary-foreground">{review.rating}/5</span>
+                </div>
+                {review.comment && <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-foreground">{review.comment}</p>}
+              </article>
+            )) : <div className="rounded-2xl border border-dashed border-border bg-background-alt p-6 text-sm leading-6 text-muted-foreground">Отзывов по вашим проектам пока нет.</div>}
           </div>
         </div>
       </div>

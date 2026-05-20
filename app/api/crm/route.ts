@@ -6,6 +6,7 @@ const emptyData = {
   developers: [],
   tasks: [],
   managerTasks: [],
+  reviews: [],
   notifications: [],
 }
 
@@ -15,6 +16,17 @@ async function ensureCrmColumns(pool: NonNullable<ReturnType<typeof getPool>>) {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS specialization TEXT")
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS repository_url TEXT")
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS repository_url TEXT")
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_reviews (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      client_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS project_reviews_project_client_idx ON project_reviews(project_id, client_id)")
 }
 
 export async function GET() {
@@ -31,7 +43,7 @@ export async function GET() {
     const userId = cookieStore.get("neuralbrief.userId")?.value || null
     const role = cookieStore.get("neuralbrief.role")?.value || null
 
-    const [requestsResult, developersResult, tasksResult, managerTasksResult, notificationsResult] = await Promise.all([
+    const [requestsResult, developersResult, tasksResult, managerTasksResult, reviewsResult, notificationsResult] = await Promise.all([
       pool.query(`
         SELECT
           p.id,
@@ -116,8 +128,24 @@ export async function GET() {
         LEFT JOIN users u ON u.id = ta.developer_id
         WHERE p.manager_id = $1::UUID
           AND p.archived_at IS NULL
+          AND p.status <> 'rejected'
         ORDER BY t.updated_at DESC
         LIMIT 10
+      `, [userId]) : Promise.resolve({ rows: [] }),
+      role === "manager" && userId ? pool.query(`
+        SELECT
+          pr.id,
+          pr.rating,
+          pr.comment,
+          pr.created_at,
+          p.title AS project_title,
+          COALESCE(c.name, 'Клиент') AS client_name
+        FROM project_reviews pr
+        JOIN projects p ON p.id = pr.project_id
+        LEFT JOIN users c ON c.id = pr.client_id
+        WHERE p.manager_id = $1::UUID
+        ORDER BY pr.created_at DESC
+        LIMIT 20
       `, [userId]) : Promise.resolve({ rows: [] }),
       pool.query(`
         SELECT id, title, body, read_at, created_at
@@ -135,6 +163,7 @@ export async function GET() {
       developers: developersResult.rows,
       tasks: tasksResult.rows,
       managerTasks: managerTasksResult.rows,
+      reviews: reviewsResult.rows,
       notifications: notificationsResult.rows,
       events: notificationsResult.rows.map((row) => ({ id: row.id, title: row.title, body: row.body, read_at: row.read_at, created_at: row.created_at })),
     })

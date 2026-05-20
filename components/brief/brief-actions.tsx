@@ -11,7 +11,7 @@ type BriefMessage = {
   text: string
 }
 
-export function BriefActions({ briefText, messages = [], userRole, isLoggedIn }: { briefText: string; messages?: BriefMessage[]; userRole?: string | null; isLoggedIn?: boolean }) {
+export function BriefActions({ briefText, messages = [], userRole, isLoggedIn, onReset }: { briefText: string; messages?: BriefMessage[]; userRole?: string | null; isLoggedIn?: boolean; onReset?: () => void }) {
   const [sent, setSent] = useState(false)
 
   function downloadPdf() {
@@ -19,6 +19,16 @@ export function BriefActions({ briefText, messages = [], userRole, isLoggedIn }:
       description: "В окне печати выберите «Сохранить как PDF».",
     })
     window.print()
+  }
+
+  function clearDialog() {
+    localStorage.removeItem("neuralbrief.chat")
+    localStorage.removeItem("neuralbrief.updatedAt")
+    setSent(false)
+    onReset?.()
+    toast.success("Диалог очищен", {
+      description: "Теперь можно начать новый проект.",
+    })
   }
 
   async function sendToManager() {
@@ -49,6 +59,8 @@ export function BriefActions({ briefText, messages = [], userRole, isLoggedIn }:
     }
 
     setSent(true)
+    localStorage.removeItem("neuralbrief.chat")
+    localStorage.removeItem("neuralbrief.updatedAt")
     toast.success("Отправлено менеджеру", {
       description: "Менеджер получил уведомление и рассмотрит ТЗ.",
     })
@@ -98,6 +110,14 @@ export function BriefActions({ briefText, messages = [], userRole, isLoggedIn }:
         >
           {sent ? <Check className="size-3.5" /> : <Send className="size-3.5" />}
         </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={clearDialog}
+        className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+      >
+        Новый проект
       </button>
       </div>
     </div>

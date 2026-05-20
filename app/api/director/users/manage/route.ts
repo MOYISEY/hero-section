@@ -2,7 +2,7 @@ import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
 import { isRole } from "@/lib/auth"
 
-const actions = ["set_role", "ban", "unban", "soft_delete"] as const
+const actions = ["set_role", "set_specialization", "delete"] as const
 
 type DirectorAction = (typeof actions)[number]
 
@@ -29,12 +29,13 @@ export async function PATCH(req: Request) {
   const userId = typeof body?.userId === "string" ? body.userId : ""
   const action = isDirectorAction(body?.action) ? body.action : null
   const nextRole = isRole(body?.role) ? body.role : null
+  const specialization = typeof body?.specialization === "string" ? body.specialization.trim() : ""
 
   if (!userId || !action) {
     return Response.json({ error: "User id and valid action are required" }, { status: 400 })
   }
 
-  if (userId === directorId && (action === "ban" || action === "soft_delete" || action === "set_role")) {
+  if (userId === directorId && (action === "delete" || action === "set_role")) {
     return Response.json({ error: "Director cannot restrict own account" }, { status: 400 })
   }
 
@@ -44,12 +45,11 @@ export async function PATCH(req: Request) {
     await client.query("BEGIN")
 
     let result
-    let metadata = {}
 
     if (action === "set_role") {
-      if (!nextRole || nextRole === "director") {
+      if (!nextRole || !["manager", "developer"].includes(nextRole)) {
         await client.query("ROLLBACK")
-        return Response.json({ error: "Role must be client, manager or developer" }, { status: 400 })
+        return Response.json({ error: "Role must be manager or developer" }, { status: 400 })
       }
 
       result = await client.query(
@@ -61,24 +61,21 @@ export async function PATCH(req: Request) {
         `,
         [nextRole, userId],
       )
-      metadata = { role: nextRole }
-    } else if (action === "ban" || action === "unban") {
+    } else if (action === "set_specialization") {
       result = await client.query(
         `
           UPDATE users
-          SET is_banned = $1
-          WHERE id = $2::UUID AND deleted_at IS NULL
-          RETURNING id, email, name, role, is_banned
+          SET specialization = NULLIF($1, '')
+          WHERE id = $2::UUID AND deleted_at IS NULL AND role = 'developer'
+          RETURNING id, email, name, role, is_banned, specialization
         `,
-        [action === "ban", userId],
+        [specialization, userId],
       )
-      metadata = { is_banned: action === "ban" }
     } else {
       result = await client.query(
         `
-          UPDATE users
-          SET deleted_at = NOW(), status = 'inactive'
-          WHERE id = $1::UUID AND deleted_at IS NULL
+          DELETE FROM users
+          WHERE id = $1::UUID AND deleted_at IS NULL AND role IN ('manager', 'developer')
           RETURNING id, email, name, role, is_banned
         `,
         [userId],
@@ -89,14 +86,6 @@ export async function PATCH(req: Request) {
       await client.query("ROLLBACK")
       return Response.json({ error: "User not found" }, { status: 404 })
     }
-
-    await client.query(
-      `
-        INSERT INTO audit_log (actor_id, target_user_id, action, metadata)
-        VALUES ($1::UUID, $2::UUID, $3, $4)
-      `,
-      [directorId, userId, action, JSON.stringify(metadata)],
-    )
 
     await client.query("COMMIT")
     return Response.json({ ok: true, user: result.rows[0] })

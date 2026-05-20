@@ -12,8 +12,11 @@ const NAV = [
   { href: "/", label: "Главная" },
   { href: "/chat", label: "Диалог" },
   { href: "/brief", label: "Образец ТЗ" },
+  { href: "/projects", label: "Проекты", role: "client" },
   { href: "/manager", label: "Менеджер", role: "manager" },
+  { href: "/manager/chats", label: "Чаты", role: "manager" },
   { href: "/developer", label: "Разработчик", role: "developer" },
+  { href: "/director", label: "Директор", role: "director" },
   { href: "/about", label: "О системе" },
 ] as const
 

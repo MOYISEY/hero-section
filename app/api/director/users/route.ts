@@ -27,8 +27,8 @@ export async function POST(req: Request) {
     return Response.json({ error: "Name, email, password and role are required" }, { status: 400 })
   }
 
-  if (role === "client") {
-    return Response.json({ error: "Clients should register themselves" }, { status: 400 })
+  if (role !== "manager" && role !== "developer") {
+    return Response.json({ error: "Director can create only manager or developer accounts" }, { status: 400 })
   }
 
   if (password.length < 6) {

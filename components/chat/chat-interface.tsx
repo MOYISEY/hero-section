@@ -107,7 +107,7 @@ function getText(message: UIMessage): string {
 
 export function ChatInterface() {
   const initialMessages = useMemo(() => getInitialMessages(), [])
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: "/api/hero-chat" }),
     messages: initialMessages,
   })
@@ -264,7 +264,6 @@ export function ChatInterface() {
             <span aria-hidden className="nb-status-dot" />
             / trace · live session
           </span>
-          <span>SESSION 0</span>
           <span>GROQ</span>
         </div>
       </div>
@@ -500,6 +499,18 @@ export function ChatInterface() {
               </label>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] text-muted-foreground tracking-wide">
                 <p>{isRecording ? "Идёт запись · говорите свободно" : "Enter — отправить · голос распознаётся автоматически"}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem("neuralbrief.chat")
+                    localStorage.removeItem("neuralbrief.updatedAt")
+                    setMessages(INITIAL_MESSAGES)
+                    toast.success("Диалог очищен", { description: "Начните новый проект." })
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-[12px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+                >
+                  Новый проект
+                </button>
                 {voicePreview && (
                   <p className="max-w-full truncate rounded-full border border-primary/25 bg-primary/[0.06] px-3 py-1 text-primary">
                     Распознано: {voicePreview}

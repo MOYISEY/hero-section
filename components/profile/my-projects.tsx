@@ -62,13 +62,12 @@ export function MyProjects() {
     }
 
     toast.success("Спасибо за оценку")
-    setProjects((current) => current.filter((project) => project.id !== projectId))
+    setComments((current) => ({ ...current, [projectId]: "" }))
   }
 
   return (
-    <div className="mt-8 rounded-3xl border border-border bg-surface p-5 md:p-6">
+    <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
       <div className="mb-5">
-        <p className="nb-eyebrow">saved briefs</p>
         <h2 className="mt-2 font-display text-2xl">Мои проекты</h2>
       </div>
 
@@ -86,10 +85,12 @@ export function MyProjects() {
                     <p className="font-display text-xl">{project.title}</p>
                     <p className="mt-2 text-sm text-muted-foreground">Создано: {new Date(project.created_at).toLocaleDateString("ru-RU")} · Статус: {project.status}</p>
                   </div>
-                  <button type="button" onClick={() => downloadProject(project)} className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors hover:bg-surface">
-                    <Download className="size-4" />
-                    Скачать ТЗ
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => downloadProject(project)} className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-4 py-2 text-sm transition-colors hover:bg-surface">
+                      <Download className="size-4" />
+                      Скачать ТЗ
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{project.brief_text || "ТЗ без текста"}</p>
                 <ProjectChatPanel projectId={project.id} channel="manager_client" title="Чат с менеджером" />

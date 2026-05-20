@@ -14,8 +14,8 @@ type ChatMessage = {
   sender_role: string | null
 }
 
-export function ProjectChatPanel({ projectId, channel, title }: { projectId: string; channel: "manager_client" | "manager_developer"; title: string }) {
-  const [open, setOpen] = useState(false)
+export function ProjectChatPanel({ projectId, channel, title, defaultOpen = false }: { projectId: string; channel: "manager_client" | "manager_developer"; title: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [content, setContent] = useState("")
   const [loading, setLoading] = useState(false)
@@ -32,6 +32,7 @@ export function ProjectChatPanel({ projectId, channel, title }: { projectId: str
       .catch((error) => console.error("[chat:panel] loadMessages error:", error))
   }
 
+  useEffect(() => { setOpen(defaultOpen) }, [defaultOpen, projectId, channel])
   useEffect(() => { loadMessages() }, [open, projectId, channel])
 
   async function sendMessage() {

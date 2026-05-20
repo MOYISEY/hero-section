@@ -15,42 +15,84 @@ export async function GET() {
     return Response.json({ error: "Only director can view dashboard" }, { status: 403 })
   }
 
-  const [stats, usersByRole, users, auditLog, projects] = await Promise.all([
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_reviews (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      client_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS project_reviews_project_client_idx ON project_reviews(project_id, client_id)")
+
+  const [stats, users, reviews, projects] = await Promise.all([
     pool.query(`
       SELECT
-        COUNT(*) FILTER (WHERE status IN ('draft', 'in_development', 'review'))::INT AS active_projects,
-        COUNT(*) FILTER (WHERE status = 'done')::INT AS done_projects,
-        (SELECT COUNT(*)::INT FROM tasks WHERE status IN ('todo', 'in_progress', 'review')) AS active_tasks,
+        COUNT(*) FILTER (
+          WHERE archived_at IS NULL
+            AND status IN ('draft', 'in_development', 'review')
+            AND NOT EXISTS (SELECT 1 FROM project_reviews pr WHERE pr.project_id = projects.id)
+        )::INT AS active_projects,
+        COUNT(*) FILTER (
+          WHERE status = 'done'
+            OR EXISTS (SELECT 1 FROM project_reviews pr WHERE pr.project_id = projects.id)
+        )::INT AS done_projects,
         COALESCE((SELECT ROUND(AVG(rating)::NUMERIC, 2) FROM project_reviews), 0) AS average_rating
       FROM projects
     `),
     pool.query(`
-      SELECT role, COUNT(*)::INT AS count
-      FROM users
-      WHERE deleted_at IS NULL
-      GROUP BY role
-      ORDER BY role
-    `),
-    pool.query(`
       SELECT id, email, name, role, status, is_banned, specialization, created_at
       FROM users
-      WHERE deleted_at IS NULL
-      ORDER BY created_at DESC
+      WHERE deleted_at IS NULL AND role IN ('manager', 'developer')
+      ORDER BY role, created_at DESC
+    `),
+    pool.query(`
+      SELECT
+        pr.id,
+        pr.rating,
+        NULLIF(TRIM(pr.comment), '') AS comment,
+        pr.created_at,
+        p.title AS project_title,
+        client.name AS client_name,
+        manager.name AS manager_name,
+        developer.name AS developer_name
+      FROM project_reviews pr
+      JOIN projects p ON p.id = pr.project_id
+      LEFT JOIN users client ON client.id = pr.client_id
+      LEFT JOIN users manager ON manager.id = p.manager_id
+      LEFT JOIN tasks t ON t.project_id = p.id
+      LEFT JOIN task_assignments ta ON ta.task_id = t.id
+      LEFT JOIN users developer ON developer.id = ta.developer_id
+      ORDER BY pr.created_at DESC
       LIMIT 50
     `),
     pool.query(`
-      SELECT a.id, a.action, a.metadata, a.created_at, actor.name AS actor_name, target.name AS target_name
-      FROM audit_log a
-      LEFT JOIN users actor ON actor.id = a.actor_id
-      LEFT JOIN users target ON target.id = a.target_user_id
-      ORDER BY a.created_at DESC
-      LIMIT 30
-    `),
-    pool.query(`
-      SELECT p.id, p.title, p.status, p.is_released, p.created_at, c.name AS client_name, m.name AS manager_name
+      SELECT
+        p.id,
+        p.title,
+        p.status,
+        p.is_released,
+        p.created_at,
+        p.updated_at,
+        p.brief_text,
+        c.name AS client_name,
+        m.name AS manager_name,
+        developer.name AS developer_name,
+        t.status AS task_status,
+        t.created_at AS task_created_at,
+        t.updated_at AS task_updated_at,
+        t.completed_at AS task_completed_at,
+        EXTRACT(DAY FROM NOW() - COALESCE(t.created_at, p.created_at))::INT AS days_in_work
       FROM projects p
       LEFT JOIN users c ON c.id = p.client_id
       LEFT JOIN users m ON m.id = p.manager_id
+      LEFT JOIN tasks t ON t.project_id = p.id
+      LEFT JOIN task_assignments ta ON ta.task_id = t.id
+      LEFT JOIN users developer ON developer.id = ta.developer_id
+      WHERE p.archived_at IS NULL
+        AND p.status <> 'rejected'
       ORDER BY p.created_at DESC
       LIMIT 30
     `),
@@ -58,9 +100,8 @@ export async function GET() {
 
   return Response.json({
     stats: stats.rows[0],
-    usersByRole: usersByRole.rows,
     users: users.rows,
-    auditLog: auditLog.rows,
+    reviews: reviews.rows,
     projects: projects.rows,
   })
 }
