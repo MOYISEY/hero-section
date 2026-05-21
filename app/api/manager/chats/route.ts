@@ -42,6 +42,7 @@ export async function GET() {
       LEFT JOIN project_chat_messages pcm ON pcm.chat_id = pc.id
       WHERE (p.manager_id = $1::UUID OR (p.status = 'draft' AND p.archived_at IS NULL))
         AND p.archived_at IS NULL
+        AND p.status <> 'rejected'
       GROUP BY p.id, p.title, t.id, t.description, t.repository_url, p.brief_text, p.repository_url, p.status, p.created_at, client.name, client.email, developer.name, developer.email
       ORDER BY GREATEST(
         COALESCE(MAX(pcm.created_at), p.created_at),
