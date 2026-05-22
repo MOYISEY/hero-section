@@ -8,6 +8,7 @@ const emptyData = {
   managerTasks: [],
   reviews: [],
   notifications: [],
+  board: [],
 }
 
 async function ensureCrmColumns(pool: NonNullable<ReturnType<typeof getPool>>) {
@@ -15,6 +16,8 @@ async function ensureCrmColumns(pool: NonNullable<ReturnType<typeof getPool>>) {
   await pool.query("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ")
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS specialization TEXT")
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS repository_url TEXT")
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_id TEXT")
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_url TEXT")
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS repository_url TEXT")
   await pool.query(`
     CREATE TABLE IF NOT EXISTS project_reviews (
@@ -43,7 +46,7 @@ export async function GET() {
     const userId = cookieStore.get("neuralbrief.userId")?.value || null
     const role = cookieStore.get("neuralbrief.role")?.value || null
 
-    const [requestsResult, developersResult, tasksResult, managerTasksResult, reviewsResult, notificationsResult] = await Promise.all([
+    const [requestsResult, developersResult, tasksResult, managerTasksResult, reviewsResult, notificationsResult, boardResult] = await Promise.all([
       pool.query(`
         SELECT
           p.id,
@@ -90,6 +93,7 @@ export async function GET() {
             WHEN 'done' THEN 'Готово'
           END AS status,
           COALESCE(t.repository_url, p.repository_url, '') AS repo,
+          t.trello_card_url,
           p.id AS project_id,
           p.title AS project_title,
           p.created_at AS project_created_at,
@@ -118,6 +122,7 @@ export async function GET() {
             WHEN 'done' THEN 'Готово'
           END AS status,
           COALESCE(t.repository_url, p.repository_url, '') AS repo,
+          t.trello_card_url,
           u.name AS developer_name,
           p.id AS project_id,
           p.title AS project_title,
@@ -155,6 +160,35 @@ export async function GET() {
         ORDER BY CASE WHEN read_at IS NULL THEN 0 ELSE 1 END, created_at DESC
         LIMIT 12
       `, [userId]),
+      (role === "manager" || role === "director") ? pool.query(`
+        SELECT
+          t.id,
+          LEFT(t.id::TEXT, 8) AS short_id,
+          t.title,
+          t.description,
+          t.status,
+          t.trello_card_url,
+          t.repository_url,
+          t.created_at,
+          t.updated_at,
+          p.id AS project_id,
+          p.title AS project_title,
+          p.status AS project_status,
+          c.name AS client_name,
+          m.name AS manager_name,
+          d.name AS developer_name
+        FROM tasks t
+        JOIN projects p ON p.id = t.project_id
+        LEFT JOIN users c ON c.id = p.client_id
+        LEFT JOIN users m ON m.id = p.manager_id
+        LEFT JOIN task_assignments ta ON ta.task_id = t.id
+        LEFT JOIN users d ON d.id = ta.developer_id
+        WHERE p.archived_at IS NULL
+          AND p.status <> 'rejected'
+          AND ($1::UUID IS NULL OR $2::TEXT = 'director' OR p.manager_id = $1::UUID)
+        ORDER BY t.updated_at DESC
+        LIMIT 80
+      `, [userId, role]) : Promise.resolve({ rows: [] }),
     ])
 
     return Response.json({
@@ -165,6 +199,7 @@ export async function GET() {
       managerTasks: managerTasksResult.rows,
       reviews: reviewsResult.rows,
       notifications: notificationsResult.rows,
+      board: boardResult.rows,
       events: notificationsResult.rows.map((row) => ({ id: row.id, title: row.title, body: row.body, read_at: row.read_at, created_at: row.created_at })),
     })
   } catch (error) {

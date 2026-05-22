@@ -26,8 +26,10 @@ export async function GET() {
     )
   `)
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS project_reviews_project_client_idx ON project_reviews(project_id, client_id)")
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_id TEXT")
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_url TEXT")
 
-  const [stats, users, reviews, projects] = await Promise.all([
+  const [stats, users, reviews, projects, board, boardStats] = await Promise.all([
     pool.query(`
       SELECT
         COUNT(*) FILTER (
@@ -81,6 +83,8 @@ export async function GET() {
         m.name AS manager_name,
         developer.name AS developer_name,
         t.status AS task_status,
+        t.trello_card_url,
+        t.repository_url,
         t.created_at AS task_created_at,
         t.updated_at AS task_updated_at,
         t.completed_at AS task_completed_at,
@@ -96,6 +100,42 @@ export async function GET() {
       ORDER BY p.created_at DESC
       LIMIT 30
     `),
+    pool.query(`
+      SELECT
+        t.id,
+        LEFT(t.id::TEXT, 8) AS short_id,
+        t.title,
+        t.description,
+        t.status,
+        t.repository_url,
+        t.trello_card_url,
+        t.created_at,
+        t.updated_at,
+        p.id AS project_id,
+        p.title AS project_title,
+        p.status AS project_status,
+        client.name AS client_name,
+        manager.name AS manager_name,
+        developer.name AS developer_name
+      FROM tasks t
+      JOIN projects p ON p.id = t.project_id
+      LEFT JOIN users client ON client.id = p.client_id
+      LEFT JOIN users manager ON manager.id = p.manager_id
+      LEFT JOIN task_assignments ta ON ta.task_id = t.id
+      LEFT JOIN users developer ON developer.id = ta.developer_id
+      WHERE p.archived_at IS NULL
+        AND p.status <> 'rejected'
+      ORDER BY t.updated_at DESC
+      LIMIT 100
+    `),
+    pool.query(`
+      SELECT status, COUNT(*)::INT AS count
+      FROM tasks t
+      JOIN projects p ON p.id = t.project_id
+      WHERE p.archived_at IS NULL
+        AND p.status <> 'rejected'
+      GROUP BY status
+    `),
   ])
 
   return Response.json({
@@ -103,5 +143,7 @@ export async function GET() {
     users: users.rows,
     reviews: reviews.rows,
     projects: projects.rows,
+    board: board.rows,
+    boardStats: boardStats.rows,
   })
 }

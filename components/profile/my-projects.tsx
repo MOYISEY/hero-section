@@ -30,10 +30,7 @@ export function MyProjects() {
   useEffect(() => {
     fetch("/api/projects/my")
       .then((response) => response.ok ? response.json() : { projects: [] })
-      .then((data) => {
-        console.log("[my-projects] loaded:", data.projects?.length || 0, data.projects)
-        setProjects(data.projects || [])
-      })
+      .then((data) => setProjects(data.projects || []))
       .finally(() => setLoading(false))
   }, [])
 

@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   description TEXT,
   status TEXT NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'review', 'done')),
   repository_url TEXT,
+  trello_card_id TEXT,
+  trello_card_url TEXT,
   due_at TIMESTAMPTZ,
   started_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
@@ -77,6 +79,8 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_at TIMESTAMPTZ;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_id TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_url TEXT;
 
 CREATE TABLE IF NOT EXISTS task_assignments (
   task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -159,3 +163,174 @@ CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks(status);
 CREATE INDEX IF NOT EXISTS task_assignments_developer_id_idx ON task_assignments(developer_id);
 CREATE INDEX IF NOT EXISTS task_messages_task_id_idx ON task_messages(task_id);
 CREATE INDEX IF NOT EXISTS notifications_user_id_idx ON notifications(user_id);
+
+-- ============================================================
+-- 10. Triggers & protective constraints
+-- ============================================================
+
+-- 10.1 Prevent race condition: one draft project per client at a time
+CREATE UNIQUE INDEX IF NOT EXISTS one_draft_per_client_idx
+  ON projects(client_id)
+  WHERE status = 'draft' AND archived_at IS NULL;
+
+-- 10.2 Auto-update updated_at helper
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply to tables with updated_at
+DROP TRIGGER IF EXISTS projects_updated_at_trigger ON projects;
+CREATE TRIGGER projects_updated_at_trigger
+  BEFORE UPDATE ON projects
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS tasks_updated_at_trigger ON tasks;
+CREATE TRIGGER tasks_updated_at_trigger
+  BEFORE UPDATE ON tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS wiki_pages_updated_at_trigger ON wiki_pages;
+CREATE TRIGGER wiki_pages_updated_at_trigger
+  BEFORE UPDATE ON wiki_pages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- 10.3 Auto-set started_at when task goes to 'in_progress'
+CREATE OR REPLACE FUNCTION set_task_started_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'in_progress' AND OLD.status <> 'in_progress' AND NEW.started_at IS NULL THEN
+    NEW.started_at = NOW();
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS tasks_started_at_trigger ON tasks;
+CREATE TRIGGER tasks_started_at_trigger
+  BEFORE UPDATE ON tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION set_task_started_at();
+
+-- 10.4 Auto-set completed_at when task goes to 'done'
+CREATE OR REPLACE FUNCTION set_task_completed_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'done' AND OLD.status <> 'done' AND NEW.completed_at IS NULL THEN
+    NEW.completed_at = NOW();
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS tasks_completed_at_trigger ON tasks;
+CREATE TRIGGER tasks_completed_at_trigger
+  BEFORE UPDATE ON tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION set_task_completed_at();
+
+-- 10.5 Audit log for projects
+CREATE OR REPLACE FUNCTION audit_project_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    INSERT INTO audit_log (project_id, action, metadata, created_at)
+    VALUES (
+      NEW.id,
+      'project_updated',
+      jsonb_build_object(
+        'old_status', OLD.status,
+        'new_status', NEW.status,
+        'old_manager_id', OLD.manager_id,
+        'new_manager_id', NEW.manager_id,
+        'old_title', OLD.title,
+        'new_title', NEW.title
+      ),
+      NOW()
+    );
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO audit_log (project_id, action, metadata, created_at)
+    VALUES (OLD.id, 'project_deleted', jsonb_build_object('title', OLD.title, 'status', OLD.status), NOW());
+  ELSIF TG_OP = 'INSERT' THEN
+    INSERT INTO audit_log (project_id, action, metadata, created_at)
+    VALUES (NEW.id, 'project_created', jsonb_build_object('title', NEW.title, 'status', NEW.status), NOW());
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS projects_audit_trigger ON projects;
+CREATE TRIGGER projects_audit_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON projects
+  FOR EACH ROW
+  EXECUTE FUNCTION audit_project_changes();
+
+-- 10.6 Audit log for tasks
+CREATE OR REPLACE FUNCTION audit_task_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    INSERT INTO audit_log (project_id, action, metadata, created_at)
+    VALUES (
+      NEW.project_id,
+      'task_updated',
+      jsonb_build_object(
+        'task_id', NEW.id,
+        'old_status', OLD.status,
+        'new_status', NEW.status,
+        'old_title', OLD.title,
+        'new_title', NEW.title
+      ),
+      NOW()
+    );
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO audit_log (project_id, action, metadata, created_at)
+    VALUES (OLD.project_id, 'task_deleted', jsonb_build_object('task_id', OLD.id, 'title', OLD.title), NOW());
+  ELSIF TG_OP = 'INSERT' THEN
+    INSERT INTO audit_log (project_id, action, metadata, created_at)
+    VALUES (NEW.project_id, 'task_created', jsonb_build_object('task_id', NEW.id, 'title', NEW.title, 'status', NEW.status), NOW());
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS tasks_audit_trigger ON tasks;
+CREATE TRIGGER tasks_audit_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION audit_task_changes();
+
+-- 10.7 Protect created_at from modification (immutable timestamp)
+CREATE OR REPLACE FUNCTION prevent_created_at_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.created_at <> OLD.created_at THEN
+    RAISE EXCEPTION 'created_at cannot be modified';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS users_protect_created_at ON users;
+CREATE TRIGGER users_protect_created_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_created_at_update();
+
+DROP TRIGGER IF EXISTS projects_protect_created_at ON projects;
+CREATE TRIGGER projects_protect_created_at
+  BEFORE UPDATE ON projects
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_created_at_update();
+
+DROP TRIGGER IF EXISTS tasks_protect_created_at ON tasks;
+CREATE TRIGGER tasks_protect_created_at
+  BEFORE UPDATE ON tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_created_at_update();

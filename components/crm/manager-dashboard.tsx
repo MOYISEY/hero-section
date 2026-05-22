@@ -8,12 +8,20 @@ import { NotificationList } from "@/components/crm/notification-list"
 type RequestItem = { id: string; title: string; brief_text: string | null; status: string; client_name: string; client_email: string | null }
 type Developer = { id: string; name: string; stack: string; load: string }
 type Notification = { id: string; title: string; body: string | null; read_at?: string | null }
-type ManagerTask = { id: string; short_id: string; project_id: string; title: string; description: string | null; status: string; raw_status: string; repo: string; developer_name: string | null; project_title: string; project_status: string }
+type ManagerTask = { id: string; short_id: string; project_id: string; title: string; description: string | null; status: string; raw_status: string; repo: string; trello_card_url: string | null; developer_name: string | null; project_title: string; project_status: string }
 type ProjectReview = { id: string; rating: number; comment: string | null; project_title: string; client_name: string | null; created_at: string }
-type CrmData = { requests: RequestItem[]; developers: Developer[]; notifications: Notification[]; managerTasks: ManagerTask[]; reviews: ProjectReview[] }
+type BoardTask = { id: string; short_id: string; title: string; description: string | null; status: string; trello_card_url: string | null; repository_url: string | null; project_title: string; client_name: string | null; developer_name: string | null }
+type CrmData = { requests: RequestItem[]; developers: Developer[]; notifications: Notification[]; managerTasks: ManagerTask[]; reviews: ProjectReview[]; board: BoardTask[] }
+
+const boardColumns = [
+  { key: "todo", title: "Задачи" },
+  { key: "in_progress", title: "В работе" },
+  { key: "review", title: "На проверке" },
+  { key: "done", title: "Готово" },
+]
 
 export function ManagerDashboard() {
-  const [data, setData] = useState<CrmData>({ requests: [], developers: [], notifications: [], managerTasks: [], reviews: [] })
+  const [data, setData] = useState<CrmData>({ requests: [], developers: [], notifications: [], managerTasks: [], reviews: [], board: [] })
   const [selectedDevelopers, setSelectedDevelopers] = useState<Record<string, string>>({})
   const [returnComments, setReturnComments] = useState<Record<string, string>>({})
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
@@ -21,7 +29,7 @@ export function ManagerDashboard() {
   function loadData() {
     fetch("/api/crm")
       .then((response) => response.json())
-      .then((nextData) => setData({ requests: nextData.requests || [], developers: nextData.developers || [], notifications: nextData.notifications || [], managerTasks: nextData.managerTasks || [], reviews: nextData.reviews || [] }))
+      .then((nextData) => setData({ requests: nextData.requests || [], developers: nextData.developers || [], notifications: nextData.notifications || [], managerTasks: nextData.managerTasks || [], reviews: nextData.reviews || [], board: nextData.board || [] }))
       .catch(() => undefined)
   }
 
@@ -108,6 +116,34 @@ export function ManagerDashboard() {
   return (
     <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
       <div className="space-y-6">
+        <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div><p className="nb-eyebrow">task board</p><h2 className="mt-2 font-display text-2xl">Доска задач</h2></div>
+            <button type="button" onClick={loadData} className="rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground">Обновить</button>
+          </div>
+          <div className="grid gap-4 xl:grid-cols-4">
+            {boardColumns.map((column) => {
+              const tasks = data.board.filter((task) => task.status === column.key)
+              return (
+                <div key={column.key} className="rounded-2xl border border-border bg-background-alt p-4">
+                  <div className="mb-4 flex items-center justify-between"><h3 className="font-display text-lg">{column.title}</h3><span className="rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] text-primary">{tasks.length}</span></div>
+                  <div className="space-y-3">
+                    {tasks.length ? tasks.map((task) => (
+                      <article key={task.id} className="rounded-xl border border-border/70 bg-surface p-4">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">{task.short_id}</p>
+                        <p className="mt-2 font-display text-base">{task.title}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">Разработчик: {task.developer_name || "Не назначен"}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Клиент: {task.client_name || "Не указан"}</p>
+                        {task.trello_card_url && <a href={task.trello_card_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-full border border-border px-3 py-1 text-xs transition-colors hover:border-primary hover:text-primary">Открыть Trello</a>}
+                      </article>
+                    )) : <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground">Пусто</div>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="rounded-3xl border border-border bg-surface p-5 md:p-6">
           <div className="mb-5"><p className="nb-eyebrow">brief requests</p><h2 className="mt-2 font-display text-2xl">Заявки на рассмотрение</h2></div>
           <div className="grid gap-4">

@@ -10,15 +10,12 @@ function isChatChannel(value: unknown): value is ChatChannel {
 }
 
 async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, userId: string, role: string | null, channel: ChatChannel, projectId: string | null, targetUserId: string | null) {
-  console.log("[chat:access] channel:", channel, "userId:", userId, "role:", role, "projectId:", projectId, "targetUserId:", targetUserId)
-
   if (channel === "director_user") {
     if (role === "director") return Boolean(targetUserId)
     return targetUserId === userId
   }
 
   if (!projectId) {
-    console.log("[chat:access] denied: no projectId")
     return false
   }
 
@@ -33,7 +30,6 @@ async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, user
       `,
       [projectId, userId, role],
     )
-    console.log("[chat:access] manager_client query rows:", result.rows.length, result.rows[0])
     return Boolean(result.rows[0]) && (role === "manager" || role === "client")
   }
 
@@ -49,8 +45,6 @@ async function canAccessChat(pool: NonNullable<ReturnType<typeof getPool>>, user
     `,
     [projectId, userId],
   )
-  console.log("[chat:access] manager_developer query rows:", result.rows.length, result.rows[0])
-
   return Boolean(result.rows[0]) && (role === "manager" || role === "developer")
 }
 
@@ -170,15 +164,12 @@ export async function POST(req: Request) {
   const targetUserId = typeof body?.targetUserId === "string" ? body.targetUserId : null
   const content = typeof body?.content === "string" ? body.content.trim() : ""
 
-  console.log("[chat:post] body:", body, "channel:", channel, "projectId:", projectId, "content:", content ? "present" : "missing")
-
   if (!channel || !content) {
     return Response.json({ error: "Channel and message content are required" }, { status: 400 })
   }
 
   await ensureChatTables(pool)
   const allowed = await canAccessChat(pool, userId, role, channel, projectId, targetUserId)
-  console.log("[chat:post] allowed:", allowed)
 
   if (!allowed) {
     return Response.json({ error: "Access denied" }, { status: 403 })

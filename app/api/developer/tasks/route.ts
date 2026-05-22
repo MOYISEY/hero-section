@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
+import { moveTrelloCard } from "@/lib/trello"
 
 const allowedStatuses = ["in_progress", "review", "done"]
 
@@ -35,6 +36,8 @@ export async function PATCH(req: Request) {
 
   try {
     await client.query("BEGIN")
+    await client.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_id TEXT")
+    await client.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_url TEXT")
 
     const result = await client.query(
       `
@@ -48,7 +51,7 @@ export async function PATCH(req: Request) {
         WHERE t.id = ta.task_id
           AND ta.developer_id = $2
           AND t.id = $3
-        RETURNING t.id, t.title, t.status, t.repository_url, t.project_id
+        RETURNING t.id, t.title, t.status, t.repository_url, t.project_id, t.trello_card_id, t.trello_card_url
       `,
       [status, developerId, taskId, repositoryUrl],
     )
@@ -87,6 +90,7 @@ export async function PATCH(req: Request) {
     }
 
     await client.query("COMMIT")
+    if (status) await moveTrelloCard(task.trello_card_id, status)
     return Response.json({ ok: true, task })
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined)

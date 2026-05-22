@@ -30,15 +30,24 @@ const developerSpecializations = [
   "API Integration Specialist",
 ]
 
+const boardColumns = [
+  { key: "todo", title: "Задачи" },
+  { key: "in_progress", title: "В работе" },
+  { key: "review", title: "На проверке" },
+  { key: "done", title: "Готово" },
+]
+
 type DirectorData = {
   stats?: { active_projects: number; done_projects: number; average_rating: string | number }
   users: { id: string; email: string; name: string; role: string; is_banned: boolean; status: string; specialization: string | null }[]
   reviews: { id: string; rating: number; comment: string | null; project_title: string; client_name: string | null; manager_name: string | null; developer_name: string | null; created_at: string }[]
-  projects: { id: string; title: string; status: string; is_released: boolean; client_name: string | null; manager_name: string | null; developer_name: string | null; task_status: string | null; created_at: string; updated_at: string; task_created_at: string | null; task_updated_at: string | null; task_completed_at: string | null; days_in_work: number | null; brief_text: string | null }[]
+  projects: { id: string; title: string; status: string; is_released: boolean; client_name: string | null; manager_name: string | null; developer_name: string | null; task_status: string | null; trello_card_url: string | null; repository_url: string | null; created_at: string; updated_at: string; task_created_at: string | null; task_updated_at: string | null; task_completed_at: string | null; days_in_work: number | null; brief_text: string | null }[]
+  board: { id: string; short_id: string; title: string; description: string | null; status: string; repository_url: string | null; trello_card_url: string | null; created_at: string; updated_at: string; project_id: string; project_title: string; project_status: string; client_name: string | null; manager_name: string | null; developer_name: string | null }[]
+  boardStats: { status: string; count: number }[]
 }
 
 export function DirectorDashboard() {
-  const [data, setData] = useState<DirectorData>({ users: [], reviews: [], projects: [] })
+  const [data, setData] = useState<DirectorData>({ users: [], reviews: [], projects: [], board: [], boardStats: [] })
   const [loading, setLoading] = useState<string | null>(null)
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "manager", specialization: "" })
   const [showAllReviews, setShowAllReviews] = useState(false)
@@ -46,7 +55,7 @@ export function DirectorDashboard() {
   function loadData() {
     fetch("/api/director/dashboard")
       .then((response) => response.json())
-      .then((nextData) => setData({ users: nextData.users || [], reviews: nextData.reviews || [], projects: nextData.projects || [], stats: nextData.stats }))
+      .then((nextData) => setData({ users: nextData.users || [], reviews: nextData.reviews || [], projects: nextData.projects || [], board: nextData.board || [], boardStats: nextData.boardStats || [], stats: nextData.stats }))
       .catch(() => undefined)
   }
 
@@ -129,6 +138,51 @@ export function DirectorDashboard() {
           </div>
         ))}
       </div>
+
+      <section className="mt-6 rounded-3xl border border-border bg-surface p-5 md:p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="nb-eyebrow">company task board</p>
+            <h2 className="mt-2 font-display text-2xl">Доска задач компании</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Директор видит весь поток: назначение менеджером, работу разработчика, проверку и готовые задачи.</p>
+          </div>
+          <button type="button" onClick={loadData} className="rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground">Обновить</button>
+        </div>
+        <div className="mt-5 grid gap-4 xl:grid-cols-4">
+          {boardColumns.map((column) => {
+            const tasks = data.board.filter((task) => task.status === column.key)
+            const count = data.boardStats.find((item) => item.status === column.key)?.count ?? tasks.length
+            return (
+              <div key={column.key} className="rounded-2xl border border-border bg-background-alt p-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h3 className="font-display text-xl">{column.title}</h3>
+                  <span className="rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] text-primary">{count}</span>
+                </div>
+                <div className="space-y-3">
+                  {tasks.length ? tasks.map((task) => (
+                    <article key={task.id} className="rounded-xl border border-border/70 bg-surface p-4">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">{task.short_id}</p>
+                      <h4 className="mt-2 font-display text-lg leading-tight">{task.title}</h4>
+                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{task.description || task.project_title}</p>
+                      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                        <p>Клиент: {task.client_name || "Не указан"}</p>
+                        <p>Менеджер: {task.manager_name || "Не назначен"}</p>
+                        <p>Разработчик: {task.developer_name || "Не назначен"}</p>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {task.trello_card_url && <a href={task.trello_card_url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary hover:text-primary">Trello</a>}
+                        {task.repository_url && <a href={task.repository_url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary hover:text-primary">GitHub</a>}
+                      </div>
+                    </article>
+                  )) : (
+                    <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground">Пусто</div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <section className="rounded-3xl border border-border bg-surface p-5 md:p-6">

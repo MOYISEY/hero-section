@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
 import { sendEmailNotification } from "@/lib/email"
-import { createTrelloCard } from "@/lib/trello"
+import { createTrelloCard, moveTrelloCard } from "@/lib/trello"
 
 export async function PATCH(req: Request) {
   const pool = getPool()
@@ -32,6 +32,8 @@ export async function PATCH(req: Request) {
 
   try {
     await client.query("BEGIN")
+    await client.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_id TEXT")
+    await client.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS trello_card_url TEXT")
 
     if (action === "delete_done") {
       const result = await client.query(
@@ -81,7 +83,7 @@ export async function PATCH(req: Request) {
           UPDATE tasks
           SET status = 'in_progress', updated_at = NOW()
           WHERE project_id = $1
-          RETURNING id, title
+          RETURNING id, title, trello_card_id
         `,
         [project.id],
       )
@@ -119,6 +121,7 @@ export async function PATCH(req: Request) {
       )
 
       await client.query("COMMIT")
+      await Promise.all(tasks.rows.map((task) => moveTrelloCard(task.trello_card_id, "in_progress")))
       await Promise.all(developers.rows.map((developer) => sendEmailNotification({
         to: developer.email,
         subject: "Задача возвращена на доработку",
@@ -150,6 +153,7 @@ export async function PATCH(req: Request) {
           UPDATE tasks
           SET status = 'done', completed_at = NOW(), updated_at = NOW()
           WHERE project_id = $1
+          RETURNING id, trello_card_id
         `,
         [project.id],
       )
@@ -167,6 +171,8 @@ export async function PATCH(req: Request) {
       const projectClient = project.client_id ? await client.query("SELECT email FROM users WHERE id = $1::UUID", [project.client_id]) : { rows: [] }
 
       await client.query("COMMIT")
+      const doneTasks = await pool.query("SELECT trello_card_id FROM tasks WHERE project_id = $1", [project.id])
+      await Promise.all(doneTasks.rows.map((task) => moveTrelloCard(task.trello_card_id, "done")))
       await sendEmailNotification({
         to: projectClient.rows[0]?.email,
         subject: "Проект готов",
@@ -216,7 +222,7 @@ export async function PATCH(req: Request) {
         UPDATE projects
         SET status = 'in_development', manager_id = $2, updated_at = NOW()
         WHERE id = $1 AND status = 'draft'
-        RETURNING id, title, brief_text
+        RETURNING id, title, brief_text, client_id
       `,
       [projectId, managerId],
     )
@@ -252,7 +258,8 @@ export async function PATCH(req: Request) {
       [developerId, `Менеджер назначил задачу по проекту: ${project.rows[0].title}`],
     )
 
-    const developer = await client.query("SELECT email FROM users WHERE id = $1::UUID", [developerId])
+    const developer = await client.query("SELECT email, name, specialization FROM users WHERE id = $1::UUID", [developerId])
+    const clientUser = project.rows[0].client_id ? await client.query("SELECT email, name FROM users WHERE id = $1::UUID", [project.rows[0].client_id]) : { rows: [] }
 
     await client.query(
       `
@@ -284,15 +291,25 @@ export async function PATCH(req: Request) {
     )
 
     await client.query("COMMIT")
-    await createTrelloCard({
+    const trello = await createTrelloCard({
       name: project.rows[0].title,
       description: [
         project.rows[0].brief_text || "Описание проекта не указано.",
         "",
+        `Клиент: ${clientUser.rows[0]?.name || "Не указан"}${clientUser.rows[0]?.email ? ` <${clientUser.rows[0].email}>` : ""}`,
+        `Разработчик: ${developer.rows[0]?.name || "Не назначен"}${developer.rows[0]?.specialization ? ` · ${developer.rows[0].specialization}` : ""}`,
+        `Менеджер ID: ${managerId}`,
         `Project ID: ${projectId}`,
         `Task ID: ${task.rows[0].id}`,
       ].join("\n"),
+      status: "todo",
     })
+    if ("ok" in trello && trello.ok && trello.card?.id) {
+      await pool.query(
+        "UPDATE tasks SET trello_card_id = $1, trello_card_url = $2, updated_at = NOW() WHERE id = $3",
+        [trello.card.id, trello.card.shortUrl || trello.card.url || null, task.rows[0].id],
+      )
+    }
     await sendEmailNotification({
       to: developer.rows[0]?.email,
       subject: "Новая задача назначена",
