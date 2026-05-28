@@ -14,3 +14,7 @@ node_modules
 .next/
 .DS_Store
 backup.log
+database/backups/
+coverage/
+tsconfig.tsbuildinfo
+test-results/

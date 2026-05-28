@@ -1,6 +1,8 @@
 import { cookies } from "next/headers"
 import { getPool } from "@/lib/db"
 import { isRole } from "@/lib/auth"
+import { parseJsonBody, rateLimitResponse, validationErrorResponse } from "@/lib/api-helpers"
+import { directorUserManageSchema } from "@/lib/validation"
 
 const actions = ["set_role", "set_specialization", "delete"] as const
 
@@ -11,6 +13,9 @@ function isDirectorAction(value: unknown): value is DirectorAction {
 }
 
 export async function PATCH(req: Request) {
+  const limited = rateLimitResponse(req, "director-users-manage", 30, 60_000)
+  if (limited) return limited
+
   const pool = getPool()
 
   if (!pool) {
@@ -25,11 +30,18 @@ export async function PATCH(req: Request) {
     return Response.json({ error: "Only director can manage users" }, { status: 403 })
   }
 
-  const body = await req.json().catch(() => null)
-  const userId = typeof body?.userId === "string" ? body.userId : ""
-  const action = isDirectorAction(body?.action) ? body.action : null
-  const nextRole = isRole(body?.role) ? body.role : null
-  const specialization = typeof body?.specialization === "string" ? body.specialization.trim() : ""
+  let payload
+
+  try {
+    payload = await parseJsonBody(req, directorUserManageSchema)
+  } catch (error) {
+    return validationErrorResponse(error) || Response.json({ error: "Invalid request body" }, { status: 400 })
+  }
+
+  const userId = payload.userId
+  const action = isDirectorAction(payload.action) ? payload.action : null
+  const nextRole = isRole(payload.role) ? payload.role : null
+  const specialization = typeof payload.specialization === "string" ? payload.specialization.trim() : ""
 
   if (!userId || !action) {
     return Response.json({ error: "User id and valid action are required" }, { status: 400 })
@@ -86,6 +98,23 @@ export async function PATCH(req: Request) {
       await client.query("ROLLBACK")
       return Response.json({ error: "User not found" }, { status: 404 })
     }
+
+    await client.query(
+      `
+        INSERT INTO audit_log (actor_id, target_user_id, action, metadata)
+        VALUES ($1::UUID, $2::UUID, $3, $4::JSONB)
+      `,
+      [
+        directorId,
+        result.rows[0].id,
+        `user_${action}`,
+        JSON.stringify({
+          email: result.rows[0].email,
+          role: result.rows[0].role,
+          specialization: result.rows[0].specialization || null,
+        }),
+      ],
+    )
 
     await client.query("COMMIT")
     return Response.json({ ok: true, user: result.rows[0] })

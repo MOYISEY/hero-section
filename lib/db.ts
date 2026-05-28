@@ -13,3 +13,9 @@ export function getPool() {
 
   return globalForPg.neuralbriefPool
 }
+
+export async function closePool() {
+  if (!globalForPg.neuralbriefPool) return
+  await globalForPg.neuralbriefPool.end()
+  globalForPg.neuralbriefPool = undefined
+}

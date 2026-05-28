@@ -1,6 +1,17 @@
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, afterEach, afterAll } from "vitest"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
+  vi.restoreAllMocks()
+})
+
+afterAll(async () => {
+  const { closePool } = await import("@/lib/db")
+  await closePool()
+})
 
 // --- Trello helper tests ---
 describe("createTrelloCard", () => {

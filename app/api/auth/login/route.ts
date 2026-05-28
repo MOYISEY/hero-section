@@ -1,14 +1,19 @@
 import { cookies } from "next/headers"
 import { verifyPassword } from "@/lib/auth"
+import { parseJsonBody, rateLimitResponse, validationErrorResponse } from "@/lib/api-helpers"
 import { getPool } from "@/lib/db"
+import { loginSchema } from "@/lib/validation"
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null)
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : ""
-  const password = typeof body?.password === "string" ? body.password : ""
+  const limited = rateLimitResponse(req, "auth-login", 10, 60_000)
+  if (limited) return limited
 
-  if (!email || !password) {
-    return Response.json({ error: "Email and password are required" }, { status: 400 })
+  let payload
+
+  try {
+    payload = await parseJsonBody(req, loginSchema)
+  } catch (error) {
+    return validationErrorResponse(error) || Response.json({ error: "Invalid request body" }, { status: 400 })
   }
 
   const pool = getPool()
@@ -24,12 +29,12 @@ export async function POST(req: Request) {
       WHERE email = $1 AND status = 'active' AND deleted_at IS NULL
       LIMIT 1
     `,
-    [email],
+    [payload.email],
   )
 
   const user = result.rows[0]
 
-  if (!user?.password_hash || !verifyPassword(password, user.password_hash)) {
+  if (!user?.password_hash || !verifyPassword(payload.password, user.password_hash)) {
     return Response.json({ error: "Invalid email or password" }, { status: 401 })
   }
 

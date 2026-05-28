@@ -1,6 +1,7 @@
 import { convertToModelMessages, streamText, type UIMessage } from "ai"
 import { createGroq } from "@ai-sdk/groq"
 import { extractRequirements, type SavedDialogMessage } from "@/lib/requirements"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 const groq = createGroq({
   apiKey: process.env.GROQ_API_KEY,
@@ -76,6 +77,20 @@ export async function POST(req: Request) {
     return Response.json(
       { error: "GROQ_API_KEY is not configured" },
       { status: 500 },
+    )
+  }
+
+  const rateLimit = checkRateLimit(`hero-chat:${getClientIp(req)}`, 20, 60_000)
+
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: "Too many AI requests. Please wait and try again." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+        },
+      },
     )
   }
 

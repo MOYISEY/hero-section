@@ -11,21 +11,34 @@ export function proxy(request: NextRequest) {
   const requiredRoles = protectedRoutes[pathname]
 
   if (!requiredRoles) {
-    return NextResponse.next()
+    return withSecurityHeaders(NextResponse.next(), request)
   }
 
   const role = request.cookies.get("neuralbrief.role")?.value
 
   if (role && requiredRoles.includes(role)) {
-    return NextResponse.next()
+    return withSecurityHeaders(NextResponse.next(), request)
   }
 
   const loginUrl = new URL("/login", request.url)
   loginUrl.searchParams.set("next", pathname)
 
-  return NextResponse.redirect(loginUrl)
+  return withSecurityHeaders(NextResponse.redirect(loginUrl), request)
+}
+
+function withSecurityHeaders(response: NextResponse, request: NextRequest) {
+  response.headers.set("X-Frame-Options", "DENY")
+  response.headers.set("X-Content-Type-Options", "nosniff")
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+
+  if (request.nextUrl.protocol === "https:") {
+    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+  }
+
+  return response
 }
 
 export const config = {
-  matcher: ["/manager", "/developer", "/director"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }

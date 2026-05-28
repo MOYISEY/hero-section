@@ -1,8 +1,13 @@
 import { cookies } from "next/headers"
-import { hashPassword, isRole } from "@/lib/auth"
+import { hashPassword } from "@/lib/auth"
+import { parseJsonBody, rateLimitResponse, validationErrorResponse } from "@/lib/api-helpers"
 import { getPool } from "@/lib/db"
+import { directorUserCreateSchema } from "@/lib/validation"
 
 export async function POST(req: Request) {
+  const limited = rateLimitResponse(req, "director-users-create", 20, 60_000)
+  if (limited) return limited
+
   const pool = getPool()
 
   if (!pool) {
@@ -11,28 +16,18 @@ export async function POST(req: Request) {
 
   const cookieStore = await cookies()
   const currentRole = cookieStore.get("neuralbrief.role")?.value
+  const directorId = cookieStore.get("neuralbrief.userId")?.value || null
 
-  if (currentRole !== "director") {
+  if (!directorId || currentRole !== "director") {
     return Response.json({ error: "Only director can create staff accounts" }, { status: 403 })
   }
 
-  const body = await req.json().catch(() => null)
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : ""
-  const name = typeof body?.name === "string" ? body.name.trim() : ""
-  const password = typeof body?.password === "string" ? body.password : ""
-  const role = isRole(body?.role) ? body.role : null
-  const specialization = typeof body?.specialization === "string" ? body.specialization.trim() : null
+  let payload
 
-  if (!email || !name || !password || !role) {
-    return Response.json({ error: "Name, email, password and role are required" }, { status: 400 })
-  }
-
-  if (role !== "manager" && role !== "developer") {
-    return Response.json({ error: "Director can create only manager or developer accounts" }, { status: 400 })
-  }
-
-  if (password.length < 6) {
-    return Response.json({ error: "Password must be at least 6 characters" }, { status: 400 })
+  try {
+    payload = await parseJsonBody(req, directorUserCreateSchema)
+  } catch (error) {
+    return validationErrorResponse(error) || Response.json({ error: "Invalid request body" }, { status: 400 })
   }
 
   try {
@@ -48,7 +43,15 @@ export async function POST(req: Request) {
             status = 'active'
         RETURNING id, email, name, role, specialization
       `,
-      [email, name, role, hashPassword(password), specialization],
+      [payload.email, payload.name, payload.role, hashPassword(payload.password), payload.specialization || null],
+    )
+
+    await pool.query(
+      `
+        INSERT INTO audit_log (actor_id, target_user_id, action, metadata)
+        VALUES ($1::UUID, $2::UUID, 'staff_account_created', $3::JSONB)
+      `,
+      [directorId, result.rows[0].id, JSON.stringify({ email: result.rows[0].email, role: result.rows[0].role })],
     )
 
     return Response.json({ ok: true, user: result.rows[0] })

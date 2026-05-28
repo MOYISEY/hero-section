@@ -1,73 +1,107 @@
-# hero-section
+# NeuralBrief
 
-## Diploma materials
+NeuralBrief is a diploma web application for collecting client requirements through an LLM interview and turning the dialog into a structured technical specification. The generated brief is passed into a CRM workflow where managers assign developers, track tasks, communicate with users and control project delivery.
 
-Дипломная структура, проверка требований и готовые формулировки для пояснительной записки находятся в `docs/diploma-plan.md`.
+## Core features
 
-## NeuralBrief features
+- LLM interview with the client through Groq and Vercel AI SDK.
+- Structured requirements extraction and completeness scoring.
+- User roles: `client`, `manager`, `developer`, `director`.
+- Client project cabinet with statuses, progress and review flow.
+- Manager CRM for approving briefs, assigning developers and checking results.
+- Developer workspace with task statuses and GitHub repository links.
+- Director dashboard with statistics, users, audit log and Kanban overview.
+- Internal notifications and role-based project chats.
+- Trello integration for external Kanban synchronization.
+- PostgreSQL schema with indexes, audit log, triggers and protective constraints.
+- Docker Compose setup for reproducible local deployment.
 
-- LLM-диалог с клиентом и генерация черновика технического задания.
-- Структурированное извлечение требований и расчёт полноты данных.
-- Авторизация с ролями: client, manager, developer, director.
-- Сохранение ТЗ и проектов только для зарегистрированных клиентов.
-- CRM workflow: клиент → менеджер → разработчик → проверка → клиент.
-- Уведомления с прочтением, удалением и очисткой ленты.
-- Служебные чаты по каналам manager-client, manager-developer, director-user.
-- Панель директора со статистикой, рабочей командой, отзывами и наблюдением за проектами.
-- Личный кабинет клиента с проектами, прогрессом, скачиванием ТЗ и оценкой результата.
-- Интеграция с Trello: при назначении задачи разработчику создаётся карточка в доске задач.
+## Tech stack
 
-## Integrations
+- Next.js 16 App Router
+- React 19
+- TypeScript 5.7
+- Tailwind CSS 4
+- Radix UI / shadcn-style components
+- PostgreSQL with `pg`
+- Vercel AI SDK and Groq
+- Vitest
+- ESLint
+- Docker Compose
 
-### Trello
+## Local setup
 
-Чтобы задачи автоматически отправлялись в Trello, добавьте в `.env.local`:
+```bash
+npm install
+copy .env.example .env.local
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+## Environment variables
 
 ```env
+GROQ_API_KEY=your_groq_api_key_here
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/neuralbrief
+RESEND_API_KEY=res_...
+EMAIL_FROM=NeuralBrief <onboarding@resend.dev>
 TRELLO_API_KEY=your_trello_api_key
 TRELLO_TOKEN=your_trello_token
 TRELLO_TASKS_LIST_ID=your_trello_list_id
 ```
 
-Если переменные не заданы, приложение продолжит работать, а создание карточки будет пропущено с предупреждением в консоли.
+External integrations are optional. If Trello or Resend variables are missing, the application continues working and logs a warning.
+
+## Docker setup
+
+```bash
+docker compose up --build
+```
+
+Docker starts:
+
+- Next.js application on `http://localhost:3000`
+- PostgreSQL database `neuralbrief`
+- automatic schema initialization from `database/schema.sql`
 
 ## Quality checks
 
 ```bash
-corepack pnpm test
-corepack pnpm build
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run check
 ```
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+`npm run check` runs TypeScript validation, ESLint, unit tests and production build.
 
-## Built with v0
+## Database
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+Main files:
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_6QNy4KptjlXoKNAxGAHsWOakTOTh)
+- `database/schema.sql` — full schema, indexes, triggers and constraints
+- `database/README.md` — database setup instructions
+- `database/migrations/README.md` — migration strategy
+- `docs/database-erd.md` — ERD and relationships description
 
-## Getting Started
+## Backup
 
-First, run the development server:
+PostgreSQL backup script:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+```powershell
+.\scripts\db-backup.ps1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The script uses `DATABASE_URL` and writes SQL dumps into `database/backups/`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Diploma documentation
 
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-<a href="https://v0.app/chat/api/kiro/clone/MOYISEY/hero-section" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+- `docs/diploma-plan.md`
+- `docs/quality-and-production-plan.md`
+- `docs/database-erd.md`

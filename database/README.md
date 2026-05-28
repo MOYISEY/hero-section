@@ -1,5 +1,20 @@
 # PostgreSQL setup
 
+## Docker setup
+
+1. Install Docker Desktop.
+2. Run from the project root:
+
+```bash
+docker compose up --build
+```
+
+3. Open `http://localhost:3000`.
+
+Docker creates PostgreSQL automatically and applies `database/schema.sql` on the first start.
+
+## Manual Windows setup
+
 1. Install PostgreSQL for Windows from the official installer: https://www.postgresql.org/download/windows/
 2. During installation, keep pgAdmin 4 selected.
 3. Set a password for the `postgres` user and remember it.

@@ -1,27 +1,28 @@
 import { cookies } from "next/headers"
 import { hashPassword } from "@/lib/auth"
+import { parseJsonBody, rateLimitResponse, validationErrorResponse } from "@/lib/api-helpers"
 import { getPool } from "@/lib/db"
+import { registerSchema } from "@/lib/validation"
 
 export async function POST(req: Request) {
+  const limited = rateLimitResponse(req, "auth-register", 5, 60_000)
+  if (limited) return limited
+
+  let payload
+
+  try {
+    payload = await parseJsonBody(req, registerSchema)
+  } catch (error) {
+    return validationErrorResponse(error) || Response.json({ error: "Invalid request body" }, { status: 400 })
+  }
+
   const pool = getPool()
 
   if (!pool) {
     return Response.json({ error: "DATABASE_URL is not configured" }, { status: 500 })
   }
 
-  const body = await req.json().catch(() => null)
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : ""
-  const name = typeof body?.name === "string" ? body.name.trim() : ""
-  const password = typeof body?.password === "string" ? body.password : ""
   const role = "client"
-
-  if (!email || !name || !password) {
-    return Response.json({ error: "Name, email and password are required" }, { status: 400 })
-  }
-
-  if (password.length < 6) {
-    return Response.json({ error: "Password must be at least 6 characters" }, { status: 400 })
-  }
 
   try {
     const result = await pool.query(
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         VALUES ($1, $2, $3, $4)
         RETURNING id, email, name, role
       `,
-      [email, name, role, hashPassword(password)],
+      [payload.email, payload.name, role, hashPassword(payload.password)],
     )
 
     const cookieStore = await cookies()
