@@ -16,7 +16,10 @@ export const directorUserCreateSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   name: z.string().trim().min(2).max(120),
   password: z.string().min(6).max(256),
-  role: z.enum(roleValues).refine((role) => role === "manager" || role === "developer", {
+  role: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
+    z.enum(roleValues),
+  ).refine((role) => role === "manager" || role === "developer", {
     message: "Director can create only manager or developer accounts",
   }),
   specialization: z.string().trim().max(120).optional().nullable(),

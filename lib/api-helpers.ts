@@ -2,8 +2,34 @@ import { ZodError, type ZodSchema } from "zod"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function parseJsonBody<T>(req: Request, schema: ZodSchema<T>) {
-  const body = await req.json().catch(() => null)
-  return schema.parse(body)
+  const contentType = req.headers.get("content-type") || ""
+
+  let data: unknown = null
+
+  if (contentType.includes("application/json")) {
+    data = await req.json().catch(() => null)
+  } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+    const form = await req.formData().catch(() => null)
+    if (form) {
+      const obj: Record<string, unknown> = {}
+      for (const [key, value] of form.entries()) {
+        if (typeof value === "string") obj[key] = value
+      }
+      data = obj
+    }
+  } else {
+    data = await req.json().catch(async () => {
+      const form = await req.formData().catch(() => null)
+      if (!form) return null
+      const obj: Record<string, unknown> = {}
+      for (const [key, value] of form.entries()) {
+        if (typeof value === "string") obj[key] = value
+      }
+      return obj
+    })
+  }
+
+  return schema.parse(data)
 }
 
 export function validationErrorResponse(error: unknown) {
