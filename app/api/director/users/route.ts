@@ -31,6 +31,19 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Ensure audit_log table exists (fresh DB resilience)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        actor_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
+        action TEXT NOT NULL,
+        metadata JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `)
+
     const result = await pool.query(
       `
         INSERT INTO users (email, name, role, password_hash, specialization)
