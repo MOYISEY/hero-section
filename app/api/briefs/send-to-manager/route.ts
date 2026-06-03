@@ -38,39 +38,53 @@ export async function POST(req: Request) {
   try {
     await ensureProjectColumns(pool)
 
-    const managers = await pool.query(`SELECT id, email FROM users WHERE role = 'manager' AND status = 'active' LIMIT 10`)
+    const managers = await pool.query(`SELECT id, email, name, status FROM users WHERE role = 'manager' LIMIT 10`)
 
+    console.log("[send-to-manager] Found managers:", managers.rows.length)
     if (managers.rows.length === 0) {
-      return Response.json({ error: "No active managers found" }, { status: 404 })
+      console.error("[send-to-manager] No managers found in database")
+      return Response.json({ error: "No managers found in database" }, { status: 404 })
     }
+
+    const activeManagers = managers.rows.filter((m) => m.status === 'active')
+    console.log("[send-to-manager] Active managers:", activeManagers.length)
+
+    if (activeManagers.length === 0) {
+      console.error("[send-to-manager] No active managers found. All managers:", managers.rows)
+      return Response.json({ error: "No active managers found. Please contact administrator." }, { status: 404 })
+    }
+
+    const assignedManager = activeManagers[0]
+    console.log("[send-to-manager] Assigned manager:", assignedManager.email)
 
     const project = await pool.query(
       `
-        INSERT INTO projects (client_id, title, brief_text, requirements_json, status)
-        VALUES ($1, $2, $3, $4, 'draft')
+        INSERT INTO projects (client_id, manager_id, title, brief_text, requirements_json, status)
+        VALUES ($1, $2, $3, $4, $5, 'draft')
         RETURNING id
       `,
-      [userId, "Новое ТЗ из NeuralBrief", briefText, JSON.stringify(extractRequirements(messages))],
+      [userId, assignedManager.id, "Новое ТЗ из NeuralBrief", briefText, JSON.stringify(extractRequirements(messages))],
     )
 
-    await Promise.all(
-      managers.rows.map(async (manager) => {
-        await pool.query(
-          `
-            INSERT INTO notifications (user_id, title, body, channel)
-            VALUES ($1, 'Новое ТЗ на рассмотрение', $2, 'system')
-          `,
-          [manager.id, `Клиент отправил ТЗ менеджеру. Project ID: ${project.rows[0].id}`],
-        )
-        await sendEmailNotification({
-          to: manager.email,
-          subject: "Новое ТЗ на рассмотрение",
-          text: `Клиент отправил новое ТЗ. Откройте панель менеджера: проект ${project.rows[0].id}`,
-        })
-      }),
+    console.log("[send-to-manager] Project created:", project.rows[0].id)
+
+    await pool.query(
+      `
+        INSERT INTO notifications (user_id, title, body, channel)
+        VALUES ($1, 'Новое ТЗ на рассмотрение', $2, 'system')
+      `,
+      [assignedManager.id, `Клиент отправил ТЗ менеджеру. Project ID: ${project.rows[0].id}`],
     )
 
-    return Response.json({ ok: true, projectId: project.rows[0].id, notifiedManagers: managers.rows.length })
+    await sendEmailNotification({
+      to: assignedManager.email,
+      subject: "Новое ТЗ на рассмотрение",
+      text: `Клиент отправил новое ТЗ. Откройте панель менеджера: проект ${project.rows[0].id}`,
+    })
+
+    console.log("[send-to-manager] Notification sent to:", assignedManager.email)
+
+    return Response.json({ ok: true, projectId: project.rows[0].id, managerId: assignedManager.id })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown manager notification error"
 

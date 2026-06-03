@@ -86,6 +86,37 @@ export async function PATCH(req: Request) {
     } else {
       result = await client.query(
         `
+          SELECT id, email, name, role, is_banned, specialization
+          FROM users
+          WHERE id = $1::UUID AND deleted_at IS NULL AND role IN ('manager', 'developer')
+        `,
+        [userId],
+      )
+
+      if (!result.rows[0]) {
+        await client.query("ROLLBACK")
+        return Response.json({ error: "User not found" }, { status: 404 })
+      }
+
+      await client.query(
+        `
+          INSERT INTO audit_log (actor_id, target_user_id, action, metadata)
+          VALUES ($1::UUID, $2::UUID, $3, $4::JSONB)
+        `,
+        [
+          directorId,
+          result.rows[0].id,
+          `user_${action}`,
+          JSON.stringify({
+            email: result.rows[0].email,
+            role: result.rows[0].role,
+            specialization: result.rows[0].specialization || null,
+          }),
+        ],
+      )
+
+      result = await client.query(
+        `
           DELETE FROM users
           WHERE id = $1::UUID AND deleted_at IS NULL AND role IN ('manager', 'developer')
           RETURNING id, email, name, role, is_banned
@@ -99,22 +130,24 @@ export async function PATCH(req: Request) {
       return Response.json({ error: "User not found" }, { status: 404 })
     }
 
-    await client.query(
-      `
-        INSERT INTO audit_log (actor_id, target_user_id, action, metadata)
-        VALUES ($1::UUID, $2::UUID, $3, $4::JSONB)
-      `,
-      [
-        directorId,
-        result.rows[0].id,
-        `user_${action}`,
-        JSON.stringify({
-          email: result.rows[0].email,
-          role: result.rows[0].role,
-          specialization: result.rows[0].specialization || null,
-        }),
-      ],
-    )
+    if (action !== "delete") {
+      await client.query(
+        `
+          INSERT INTO audit_log (actor_id, target_user_id, action, metadata)
+          VALUES ($1::UUID, $2::UUID, $3, $4::JSONB)
+        `,
+        [
+          directorId,
+          result.rows[0].id,
+          `user_${action}`,
+          JSON.stringify({
+            email: result.rows[0].email,
+            role: result.rows[0].role,
+            specialization: result.rows[0].specialization || null,
+          }),
+        ],
+      )
+    }
 
     await client.query("COMMIT")
     return Response.json({ ok: true, user: result.rows[0] })
