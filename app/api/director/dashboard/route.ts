@@ -129,12 +129,12 @@ export async function GET() {
       LIMIT 100
     `),
     pool.query(`
-      SELECT status, COUNT(*)::INT AS count
+      SELECT t.status, COUNT(*)::INT AS count
       FROM tasks t
       JOIN projects p ON p.id = t.project_id
       WHERE p.archived_at IS NULL
         AND p.status <> 'rejected'
-      GROUP BY status
+      GROUP BY t.status
     `),
   ])
 
