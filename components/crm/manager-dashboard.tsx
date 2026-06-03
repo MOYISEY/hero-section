@@ -127,18 +127,16 @@ export function ManagerDashboard() {
               return (
                 <div key={column.key} className="rounded-2xl border border-border bg-background-alt p-4">
                   <div className="mb-4 flex items-center justify-between"><h3 className="font-display text-lg">{column.title}</h3><span className="rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] text-primary">{tasks.length}</span></div>
-                  <div className="max-h-[60vh] overflow-y-auto pr-1">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {tasks.length ? tasks.map((task) => (
-                        <article key={task.id} className="rounded-xl border border-border/70 bg-surface p-4">
-                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">{task.short_id}</p>
-                          <p className="mt-2 font-display text-base line-clamp-2">{task.title}</p>
-                          <p className="mt-2 text-xs text-muted-foreground">Разработчик: {task.developer_name || "Не назначен"}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">Клиент: {task.client_name || "Не указан"}</p>
-                          {task.trello_card_url && <a href={task.trello_card_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-full border border-border px-3 py-1 text-xs transition-colors hover:border-primary hover:text-primary">Открыть Trello</a>}
-                        </article>
-                      )) : <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground sm:col-span-2">Пусто</div>}
-                    </div>
+                  <div className="space-y-3">
+                    {tasks.length ? tasks.map((task) => (
+                      <article key={task.id} className="rounded-xl border border-border/70 bg-surface p-4">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">{task.short_id}</p>
+                        <p className="mt-2 font-display text-base">{task.title}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">Разработчик: {task.developer_name || "Не назначен"}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Клиент: {task.client_name || "Не указан"}</p>
+                        {task.trello_card_url && <a href={task.trello_card_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-full border border-border px-3 py-1 text-xs transition-colors hover:border-primary hover:text-primary">Открыть Trello</a>}
+                      </article>
+                    )) : <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground">Пусто</div>}
                   </div>
                 </div>
               )

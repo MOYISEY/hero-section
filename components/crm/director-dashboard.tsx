@@ -158,27 +158,25 @@ export function DirectorDashboard() {
                   <h3 className="font-display text-xl">{column.title}</h3>
                   <span className="rounded-full border border-primary/30 px-3 py-1 font-mono text-[10px] text-primary">{count}</span>
                 </div>
-                <div className="max-h-[60vh] overflow-y-auto pr-1">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {tasks.length ? tasks.map((task) => (
-                      <article key={task.id} className="rounded-xl border border-border/70 bg-surface p-4">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">{task.short_id}</p>
-                        <h4 className="mt-2 font-display text-lg leading-tight line-clamp-2">{task.title}</h4>
-                        <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{task.description || task.project_title}</p>
-                        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                          <p>Клиент: {task.client_name || "Не указан"}</p>
-                          <p>Менеджер: {task.manager_name || "Не назначен"}</p>
-                          <p>Разработчик: {task.developer_name || "Не назначен"}</p>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {task.trello_card_url && <a href={task.trello_card_url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary hover:text-primary">Trello</a>}
-                          {task.repository_url && <a href={task.repository_url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary hover:text-primary">GitHub</a>}
-                        </div>
-                      </article>
-                    )) : (
-                      <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground sm:col-span-2">Пусто</div>
-                    )}
-                  </div>
+                <div className="space-y-3">
+                  {tasks.length ? tasks.map((task) => (
+                    <article key={task.id} className="rounded-xl border border-border/70 bg-surface p-4">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">{task.short_id}</p>
+                      <h4 className="mt-2 font-display text-lg leading-tight">{task.title}</h4>
+                      <p className="mt-2 text-xs leading-5 text-muted-foreground">{task.description || task.project_title}</p>
+                      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                        <p>Клиент: {task.client_name || "Не указан"}</p>
+                        <p>Менеджер: {task.manager_name || "Не назначен"}</p>
+                        <p>Разработчик: {task.developer_name || "Не назначен"}</p>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {task.trello_card_url && <a href={task.trello_card_url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary hover:text-primary">Trello</a>}
+                        {task.repository_url && <a href={task.repository_url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary hover:text-primary">GitHub</a>}
+                      </div>
+                    </article>
+                  )) : (
+                    <div className="rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground">Пусто</div>
+                  )}
                 </div>
               </div>
             )
