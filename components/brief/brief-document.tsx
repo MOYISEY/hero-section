@@ -2,7 +2,7 @@
 
 import { Reveal } from "@/components/reveal"
 import { BriefActions } from "@/components/brief/brief-actions"
-import { extractRequirements } from "@/lib/requirements"
+import { buildBrief, serializeBrief } from "@/lib/brief"
 import { Compass, Target, Users, Layers, Brush, ListTree } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
@@ -18,6 +18,9 @@ const SECTIONS = [
   { id: "features", label: "Функционал", icon: Layers },
   { id: "design", label: "Дизайн", icon: Brush },
   { id: "structure", label: "Структура", icon: ListTree },
+  { id: "content", label: "Контент", icon: ListTree },
+  { id: "scenarios", label: "Сценарии", icon: ListTree },
+  { id: "acceptance", label: "Приёмка", icon: ListTree },
   { id: "structured", label: "Требования", icon: ListTree },
   { id: "transcript", label: "Диалог", icon: ListTree },
 ]
@@ -30,41 +33,6 @@ function fallbackMessages(): SavedMessage[] {
         "Черновик пока пуст. Начните реальный диалог, чтобы здесь появилось ТЗ по вашему проекту.",
     },
   ]
-}
-
-function splitItems(text: string): string[] {
-  return text
-    .split(/[\n.;]/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 8)
-    .slice(0, 6)
-}
-
-function buildBrief(messages: SavedMessage[]) {
-  const userMessages = messages.filter((message) => message.role === "user")
-  const aiMessages = messages.filter((message) => message.role !== "user")
-  const userText = userMessages.map((message) => message.text).join(". ").trim()
-  const aiText = aiMessages.map((message) => message.text).join(". ").trim()
-  const sourceText = userText || aiText
-  const items = splitItems(sourceText)
-  const requirements = extractRequirements(messages)
-  const title = requirements.projectType && requirements.projectType !== "Тип проекта не определён"
-    ? requirements.projectType.split(/[.;\n]/)[0].trim()
-    : userMessages[0]?.text.split(/[.;\n]/)[0].trim() || "Черновик ТЗ по вашему диалогу"
-
-  return {
-    title: title.length > 90 ? `${title.slice(0, 90).trim()}…` : title,
-    summary:
-      sourceText ||
-      "Нет сохранённых ответов пользователя. Вернитесь в диалог и опишите проект.",
-    goals: requirements.goal ? [requirements.goal, ...items].slice(0, 6) : items.length ? items : ["Цели нужно уточнить в диалоге."],
-    audience: requirements.audience,
-    features: requirements.features.join("; "),
-    design: requirements.design,
-    structure: requirements.pages.join("; "),
-    requirements,
-    transcript: messages,
-  }
 }
 
 export function BriefDocument() {
@@ -104,21 +72,7 @@ export function BriefDocument() {
   }, [])
 
   const brief = useMemo(() => buildBrief(messages), [messages])
-  const briefText = useMemo(
-    () =>
-      [
-        `ТЗ: ${brief.title}`,
-        `Описание: ${brief.summary}`,
-        `Цели: ${brief.goals.join("; ")}`,
-        `Аудитория: ${brief.audience}`,
-        `Функционал: ${brief.features}`,
-        `Дизайн: ${brief.design}`,
-        `Структура: ${brief.structure}`,
-        `Полнота данных: ${brief.requirements.completeness}%`,
-        `Недостающие данные: ${brief.requirements.missingFields.length ? brief.requirements.missingFields.join(", ") : "не выявлены"}`,
-      ].join("\n\n"),
-    [brief],
-  )
+  const briefText = useMemo(() => serializeBrief(brief), [brief])
 
   return (
     <div className="relative">
@@ -133,9 +87,9 @@ export function BriefDocument() {
               {[
                 { k: "ID", v: "NB-DRAFT" },
                 { k: "Дата", v: generatedAt ? generatedAt.split(",")[0] : "—" },
-                { k: "Автор", v: "NeuralBrief AI" },
+                { k: "Автор", v: "NeuralBrief" },
                 { k: "Источник", v: updatedAt ? "Диалог" : "Нет данных" },
-                { k: "Полнота", v: `${brief.requirements.completeness}%` },
+                { k: "Полнота ответов", v: `${brief.requirements.completeness}%` },
               ].map((m) => (
                 <div key={m.k}>
                   <dt className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -182,6 +136,7 @@ export function BriefDocument() {
           <article className="max-w-3xl">
             <Section id="summary" icon={Compass} n="01" title="Краткое описание">
               <p>{brief.summary}</p>
+              <p className="mt-3">{brief.scope}</p>
             </Section>
 
             <Section id="goals" icon={Target} n="02" title="Цели">
@@ -193,7 +148,7 @@ export function BriefDocument() {
             </Section>
 
             <Section id="features" icon={Layers} n="04" title="Функционал">
-              <p>{brief.features}</p>
+              <BulletList items={brief.features} />
             </Section>
 
             <Section id="design" icon={Brush} n="05" title="Дизайн-предпочтения">
@@ -201,10 +156,27 @@ export function BriefDocument() {
             </Section>
 
             <Section id="structure" icon={ListTree} n="06" title="Структура и заметки AI">
-              <p>{brief.structure}</p>
+              <BulletList items={brief.structure} />
             </Section>
 
-            <Section id="structured" icon={ListTree} n="07" title="Структурированные требования">
+            <Section id="content" icon={ListTree} n="07" title="Контент и материалы">
+              <BulletList items={brief.content} />
+            </Section>
+
+            <Section id="scenarios" icon={ListTree} n="08" title="Сценарий заявки">
+              <BulletList items={brief.scenarios} />
+              {brief.proposals.length > 0 && <>
+                <h3 className="font-display text-xl mt-6 mb-3">Предложения для согласования</h3>
+                <BulletList items={brief.proposals} />
+              </>}
+            </Section>
+
+            <Section id="acceptance" icon={ListTree} n="09" title="Предлагаемые условия приёмки">
+              <p className="mb-4">Эти условия нужно проверить и утвердить с заказчиком. Наличие списка не означает, что ТЗ принято.</p>
+              <BulletList items={brief.acceptanceCriteria} />
+            </Section>
+
+            <Section id="structured" icon={ListTree} n="10" title="Структурированные требования">
               <dl className="grid gap-4">
                 {[
                   ["Тип проекта", brief.requirements.projectType],
@@ -222,15 +194,16 @@ export function BriefDocument() {
               </dl>
               <div className="mt-6 rounded-xl border border-border/60 bg-surface/30 p-4">
                 <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Недостающие данные</p>
-                {brief.requirements.missingFields.length ? (
-                  <BulletList items={brief.requirements.missingFields.map((field) => `Уточнить: ${field}`)} />
+                <p className="mt-2 text-sm">Процент отражает заполнение основных полей, а не качество ТЗ или факт его согласования.</p>
+                {brief.requirements.openQuestions.length ? (
+                  <BulletList items={brief.requirements.openQuestions} />
                 ) : (
-                  <p className="mt-2 text-foreground">Критические пропуски не выявлены.</p>
+                  <p className="mt-2 text-foreground">Основные поля заполнены. Перед принятием нужна проверка заказчика.</p>
                 )}
               </div>
             </Section>
 
-            <Section id="transcript" icon={ListTree} n="08" title="Исходный диалог">
+            <Section id="transcript" icon={ListTree} n="11" title="Исходный диалог">
               <ol className="mt-5 flex flex-col gap-3">
                 {brief.transcript.map((message, index) => (
                   <li key={`${message.role}-${index}`} className="rounded-xl border border-border/60 bg-surface/30 p-4">
@@ -245,8 +218,8 @@ export function BriefDocument() {
 
             <div className="mt-16 pt-10 border-t border-border/60 grid sm:grid-cols-2 gap-6">
               <div>
-                <p className="nb-eyebrow mb-2">Согласовано</p>
-                <p className="font-display text-xl">Вы и NeuralBrief AI</p>
+                <p className="nb-eyebrow mb-2">Статус согласования</p>
+                <p className="font-display text-xl">{brief.approvalStatus}</p>
               </div>
               <div className="font-mono text-xs text-muted-foreground space-y-1.5">
                 <p>Хэш документа: локальный черновик</p>

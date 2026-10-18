@@ -107,7 +107,7 @@ function getText(message: UIMessage): string {
 
 export function ChatInterface() {
   const initialMessages = useMemo(() => getInitialMessages(), [])
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, error, clearError, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: "/api/hero-chat" }),
     messages: initialMessages,
   })
@@ -126,8 +126,14 @@ export function ChatInterface() {
     .filter((message) => message.text)
   const requirements = extractRequirements(savedDialogMessages)
   const progress = requirements.completeness
-  const stepIndex = Math.min(Math.floor((progress / 100) * STEPS.length), STEPS.length - 1)
-  const done = progress >= 85
+  const stepMissing = [
+    ["тип проекта"], ["цель проекта"], ["целевая аудитория"], ["ключевой функционал"],
+    ["дизайн и стиль"], ["сроки", "получатель и канал доставки заявки"],
+  ].map((fields) => fields.some((field) => requirements.missingFields.includes(field)))
+  const deliveryMissing = requirements.missingFields.includes("получатель и канал доставки заявки")
+  const stepIndex = deliveryMissing ? 5 : Math.max(0, stepMissing.findIndex(Boolean))
+  const nextQuestion = requirements.openQuestions[0] || "Проверьте черновик и согласуйте требования с заказчиком."
+  const hasUserInput = savedDialogMessages.some((message) => message.role === "user")
 
   useEffect(() => {
     const el = scrollRef.current
@@ -288,7 +294,7 @@ export function ChatInterface() {
           <aside className="lg:sticky lg:top-24 self-start">
             <div className="border-y border-border py-6">
               <div className="flex items-baseline justify-between mb-4">
-                <span className="nb-eyebrow">Прогресс</span>
+                <span className="nb-eyebrow">Полнота ответов</span>
                 <span className="font-mono text-[11px] text-foreground">
                   {progress}%
                 </span>
@@ -314,7 +320,7 @@ export function ChatInterface() {
                   Следующий уточняющий вопрос
                 </p>
                 <p className="mt-2 text-[13px] leading-relaxed text-foreground">
-                  {STEPS[stepIndex].question}
+                  {hasUserInput ? nextQuestion : STEPS[stepIndex].question}
                 </p>
               </div>
               <div className="mt-4 rounded-xl border border-border/70 bg-background/40 p-4">
@@ -328,7 +334,7 @@ export function ChatInterface() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-[12px] text-muted-foreground">Критические данные собраны.</p>
+                  <p className="mt-2 text-[12px] text-muted-foreground">Основные поля заполнены. Качество и принятие проверяются отдельно.</p>
                 )}
               </div>
             </div>
@@ -336,7 +342,7 @@ export function ChatInterface() {
             <ol className="mt-6 flex flex-col">
               {STEPS.map((s, i) => {
                 const state =
-                  i < stepIndex ? "done" : i === stepIndex ? "active" : "todo"
+                  !stepMissing[i] ? "done" : i === stepIndex ? "active" : "todo"
                 return (
                   <li
                     key={s.id}
@@ -383,14 +389,14 @@ export function ChatInterface() {
             <div
               className={cn(
                 "mt-8 transition-all duration-700",
-                done
+                hasUserInput
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-2 pointer-events-none",
               )}
             >
-              <p className="nb-eyebrow mb-3">Готово к вёрстке</p>
+              <p className="nb-eyebrow mb-3">Черновик для проверки</p>
               <p className="text-[14px] text-subtle-foreground leading-relaxed mb-4">
-                Если данных достаточно, можно открыть черновик ТЗ.
+                Откройте черновик на имеющихся данных. Неизвестные останутся вопросами; процент заполнения не означает принятие ТЗ.
               </p>
               <Link
                 href="/brief"
@@ -444,6 +450,12 @@ export function ChatInterface() {
                 {status === "submitted" && <TypingLine />}
               </ol>
             </div>
+
+            {error && (
+              <p role="alert" className="mt-4 rounded-xl border border-border p-4 text-sm">
+                AI не ответил. Ваши сообщения сохранены в этом браузере. Можно повторить отправку или открыть черновик на имеющихся данных.
+              </p>
+            )}
 
             <form
               onSubmit={handleSend}
@@ -505,6 +517,7 @@ export function ChatInterface() {
                     localStorage.removeItem("neuralbrief.chat")
                     localStorage.removeItem("neuralbrief.updatedAt")
                     setMessages(INITIAL_MESSAGES)
+                    clearError()
                     toast.success("Диалог очищен", { description: "Начните новый проект." })
                   }}
                   className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-[12px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
